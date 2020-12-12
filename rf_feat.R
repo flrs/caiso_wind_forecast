@@ -33,7 +33,7 @@ cv_skip_ratio <- 2
 mtry <- 3
 trees <- 500
 min_n <- 11
-max_depth <- 10
+max_depth <- 15
 
 # Set up MLFlow ----
 
@@ -117,7 +117,9 @@ mlflow_run_info <- mlflow_start_run(experiment_id = mlflow_exp_id,
 mlflow_run_id <- mlflow_run_info %>% slice(1) %>% pull(run_id)
 
 mlflow_log_param("features", paste(unlist(features), collapse=","), run_id = mlflow_run_id, client = tracker)
-
+mlflow_log_param("mtry", mtry, run_id = mlflow_run_id, client = tracker)
+mlflow_log_param("trees", trees, run_id = mlflow_run_id, client = tracker)
+mlflow_log_param("min_n", min_n, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("max_depth", max_depth, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("n_samples_single", n_samples_single, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("n_samples_cv", n_samples_cv, run_id = mlflow_run_id, client = tracker)
