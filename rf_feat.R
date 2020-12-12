@@ -261,7 +261,9 @@ mlflow_log_artifact("feature_importances.png",
                     client = tracker)
 
 feat_importances <- workflow_fit$fit$fit$fit$variable.importance
-top_feats <- sort(feat_importances, decreasing = TRUE) %>% head(round(length(feat_importances)*0.3))
+top_feats <- sort(feat_importances, decreasing = TRUE) %>% head(round(length(feat_importances)*0.4))
+
+sum(top_feats)/sum(feat_importances)
 
 paste(names(top_feats), collapse=',')
 
