@@ -51,19 +51,20 @@ comb_data <- comb_data %>%
 comb_data <- comb_data %>%
   mutate(across(matches("_ms"), function(x) x**3))
 
+comb_data %>%
+  plot_acf_diagnostics(Time,
+                       Wind,
+                       .ccf_vars = `1_wind`)
+
 comb_data_padded <- comb_data %>%
   pad_by_time(.date_var = Time,
               .by="5 min") %>%
   mutate_at(vars(`Wind`:`4_wind`), .funs= ts_impute_vec, period=1)
 
-comb_data_padded %>%
-  plot_acf_diagnostics(Time,
-                       Wind,
-                       .ccf_vars = `1_wind`)
-
 comb_data_padded <- comb_data_padded %>%
   tk_augment_lags(
     .value = matches("_wind|temp"),
-    .lags = c(1, 9, 23*60/5))
+    .lags = c(1, 9, 23*60/5)) %>%
+  drop_na()
 
 saveRDS(comb_data_padded, "comb_data_rev4.rds")
