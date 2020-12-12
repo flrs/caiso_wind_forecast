@@ -33,7 +33,7 @@ cv_skip_ratio <- 2
 mtry <- 5
 trees <- 500
 min_n <- 11
-max_depth <- 5
+max_depth <- 10
 
 # Set up MLFlow ----
 
