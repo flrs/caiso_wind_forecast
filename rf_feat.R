@@ -18,7 +18,7 @@ library(mlflow)
 
 enable_parallel <- T
 algo_desc <- "rf_feat"
-dataset <- "comb_data_rev5.RDS"
+dataset <- "comb_data_rev6.RDS"
 
 # Validation settings ----
 
