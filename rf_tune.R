@@ -42,22 +42,6 @@ max_depth <- c(3, 80)
 
 grid_size <- 20
 
-# Set up MLFlow ----
-
-tracker <- mlflow_client("http://localhost:5000")
-
-tryCatch(mlflow_create_experiment(
-  name = algo_desc,
-  client=tracker
-), error=function(e){})
-
-mlflow_exp_info <- mlflow_get_experiment(
-  name = algo_desc,
-  client=tracker
-)
-
-mlflow_exp_id <- mlflow_exp_info %>% slice(1) %>% pull(experiment_id)
-
 # Load data ----
 
 comb_data <- readRDS(dataset)
@@ -114,26 +98,6 @@ grid_spec <- grid_latin_hypercube(
 
 tags <- list()
 tags['source'] <- system("git rev-parse HEAD", intern=TRUE)
-
-mlflow_run_info <- mlflow_start_run(experiment_id = mlflow_exp_id,
-                                    client = tracker,
-                                    tags = tags)
-
-mlflow_run_id <- mlflow_run_info %>% slice(1) %>% pull(run_id)
-
-mlflow_log_param("mtry", mtry, run_id = mlflow_run_id, client = tracker)
-mlflow_log_param("trees", trees, run_id = mlflow_run_id, client = tracker)
-mlflow_log_param("min_n", min_n, run_id = mlflow_run_id, client = tracker)
-mlflow_log_param("max_depth", max_depth, run_id = mlflow_run_id, client = tracker)
-
-mlflow_log_param("features", paste(unlist(features), collapse=","), run_id = mlflow_run_id, client = tracker)
-mlflow_log_param("n_samples_single", n_samples_single, run_id = mlflow_run_id, client = tracker)
-mlflow_log_param("n_samples_cv", n_samples_cv, run_id = mlflow_run_id, client = tracker)
-mlflow_log_param("cv_n_folds", cv_n_folds, run_id = mlflow_run_id, client = tracker)
-mlflow_log_param("train_test_split_ratio", train_test_split_ratio, run_id = mlflow_run_id, client = tracker)
-mlflow_log_param("algo_desc", algo_desc, run_id = mlflow_run_id, client = tracker)
-mlflow_log_param("dataset", dataset, run_id = mlflow_run_id, client = tracker)
-mlflow_log_param("lag", lag, run_id = mlflow_run_id, client = tracker)
 
 workflow_tune <- workflow() %>%
   add_recipe(recipe_spec) %>%
