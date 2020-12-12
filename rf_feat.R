@@ -18,11 +18,11 @@ library(mlflow)
 
 enable_parallel <- T
 algo_desc <- "rf_feat"
-dataset <- "comb_data_rev4.RDS"
+dataset <- "comb_data_rev5.RDS"
 
 # Validation settings ----
 
-n_samples_single <- 180000
+n_samples_single <- 10000
 n_samples_cv <- 10000
 cv_n_folds <- 4
 train_test_split_ratio <- 0.2
