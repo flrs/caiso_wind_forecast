@@ -15,6 +15,12 @@ prod_data <- prod_data %>%
   drop_na() %>% 
   arrange('Time')
 
+prod_data <- prod_data %>%
+  mutate(
+    across(.cols = contains("Wind"),
+           .fns = function(x) ifelse(x<0, NA, x))
+    )
+
 weather_data <- weather_data %>%
   drop_na() %>% 
   arrange('Time')
