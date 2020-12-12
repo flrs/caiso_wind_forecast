@@ -18,7 +18,7 @@ library(mlflow)
 
 enable_parallel <- T
 algo_desc <- "rf_feat"
-dataset <- "comb_data_rev6.RDS"
+dataset <- "comb_data_rev7.RDS"
 
 # Validation settings ----
 
@@ -27,7 +27,7 @@ n_samples_cv <- 10000
 cv_n_folds <- 4
 train_test_split_ratio <- 0.2
 cv_skip_ratio <- 2
-lag <- 276
+lag <- 300
 
 # Model settings ----
 
@@ -261,10 +261,10 @@ mlflow_log_artifact("feature_importances.png",
                     client = tracker)
 
 feat_importances <- workflow_fit$fit$fit$fit$variable.importance
-top_feats <- sort(feat_importances, decreasing = TRUE) %>% head(round(length(feat_importances)*0.4))
+top_feats <- sort(feat_importances, decreasing = TRUE) %>% head(round(length(feat_importances)*0.67))
 
 sum(top_feats)/sum(feat_importances)
 
-paste(names(top_feats), collapse=',')
+str_replace_all(paste(names(top_feats), collapse=','), "," , ")|(")
 
 mlflow_end_run(run_id = mlflow_run_id, client = tracker)
