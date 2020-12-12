@@ -33,6 +33,7 @@ cv_skip_ratio <- 2
 mtry <- 100
 trees <- 500
 min_n <- 11
+max_depth <- 10
 
 # Set up MLFlow ----
 
@@ -100,7 +101,9 @@ model_spec <- rand_forest(
     trees = trees,
     min_n = min_n
   ) %>%
-  set_engine("ranger", importance="impurity")
+  set_engine("ranger",
+             max_depth = max_depth,
+             importance="impurity")
 
 # Run model ----
 
@@ -115,6 +118,7 @@ mlflow_run_id <- mlflow_run_info %>% slice(1) %>% pull(run_id)
 
 mlflow_log_param("features", paste(unlist(features), collapse=","), run_id = mlflow_run_id, client = tracker)
 
+mlflow_log_param("max_depth", max_depth, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("n_samples_single", n_samples_single, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("n_samples_cv", n_samples_cv, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("cv_n_folds", cv_n_folds, run_id = mlflow_run_id, client = tracker)
