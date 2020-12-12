@@ -36,9 +36,12 @@ comb_data <- comb_data %>%
   drop_na() %>%
   arrange('Time')
 
+comb_data <- comb_data %>%
+  mutate(across(`0_wind_speed_ms`:`4_wind_speed_ms`, function(x) x**3))
+
 comb_data_padded <- comb_data %>%
   pad_by_time(.date_var = Time,
               .by="5 min") %>%
   mutate_at(vars(`Wind`:`4_wind_speed_ms`), .funs= ts_impute_vec, period=1)
 
-saveRDS(comb_data_padded, "comb_data_rev0.rds")
+saveRDS(comb_data_padded, "comb_data_rev1.rds")
