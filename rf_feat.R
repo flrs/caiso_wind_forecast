@@ -82,7 +82,9 @@ recipe_spec <- recipe(formula = Wind ~ .,
     step_timeseries_signature(Time) %>%
     step_rm(ends_with(".num")) %>%
     step_rm(contains("year")) %>%
-    step_rm(contains("day")) %>%
+    step_rm(contains("mday")) %>%
+    step_rm(contains("qday")) %>%
+    step_rm(contains("yday")) %>%
     step_rm(contains("minute")) %>%
     step_rm(contains("hour12")) %>%
     step_rm(contains("second")) %>%
@@ -92,10 +94,11 @@ recipe_spec <- recipe(formula = Wind ~ .,
     step_rm(contains("week2")) %>%
     step_rm(contains("week3")) %>%
     step_rm(contains("week4")) %>%
-    step_rm(contains("wday")) %>%
     step_rm(ends_with("xts")) %>%
     step_rm(ends_with("lbl")) %>%
     step_rm("Time")
+
+recipe_spec %>% prep() %>% juice() %>% glimpse()
 
 features <- names(recipe_spec %>% prep() %>% juice())
 
@@ -261,7 +264,7 @@ mlflow_log_artifact("feature_importances.png",
                     client = tracker)
 
 feat_importances <- workflow_fit$fit$fit$fit$variable.importance
-top_feats <- sort(feat_importances, decreasing = TRUE) %>% head(round(length(feat_importances)*0.67))
+top_feats <- sort(feat_importances, decreasing = TRUE) %>% head(round(length(feat_importances)*0.5))
 
 sum(top_feats)/sum(feat_importances)
 

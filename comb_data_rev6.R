@@ -80,6 +80,14 @@ comb_data_padded <- comb_data_padded %>%
     matches("Wind"),
     .lags = 300
   ) %>%
+  tk_augment_holiday_signature(
+     .date_var = Time,
+     .locale_set      = "US",
+     .holiday_pattern = "none",
+     .exchange_set    = "none"
+  ) %>%
   drop_na()
+
+comb_data_padded %>% glimpse()
 
 saveRDS(comb_data_padded, "comb_data_rev6.rds")
