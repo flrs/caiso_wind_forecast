@@ -39,12 +39,12 @@ min_n <- 11
 tracker <- mlflow_client("http://localhost:5000")
 
 tryCatch(mlflow_create_experiment(
-  name = paste(algo_desc, "_", dataset, sep=""),
+  name = algo_desc,
   client=tracker
 ), error=function(e){})
 
 mlflow_exp_info <- mlflow_get_experiment(
-  name = paste(algo_desc, "_", dataset, sep=""),
+  name = algo_desc,
   client=tracker
 )
 
