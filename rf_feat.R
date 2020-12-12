@@ -153,7 +153,7 @@ set.seed(42)
 model_tbl_cv <- model_tbl %>%
   modeltime_fit_resamples(
     cv_splits,
-    control = control_resamples(verbose=TRUE, allow_par = FALSE)
+    control = control_resamples(verbose = TRUE, allow_par = enable_parallel)
   )
 
 if(enable_parallel){

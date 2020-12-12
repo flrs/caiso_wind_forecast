@@ -30,7 +30,7 @@ cv_skip_ratio <- 2
 
 # Model settings ----
 
-neighbors <- 50
+neighbors <- 10
 dist_power <- 10
 weight_func <- "optimal"
 
@@ -150,7 +150,7 @@ set.seed(42)
 model_tbl_cv <- model_tbl %>%
   modeltime_fit_resamples(
     cv_splits,
-    control = control_resamples(verbose=TRUE, allow_par = FALSE)
+    control = control_resamples(verbose = TRUE, allow_par = enable_parallel)
   )
 
 if(enable_parallel){
@@ -239,16 +239,5 @@ mlflow_log_metric("rsq_sd_cv", score_cvs_oos %>% slice(1) %>% pull(rsq_sd),
 mlflow_log_metric("mae_sd_cv", score_cvs_oos %>% slice(1) %>% pull(mae_sd),
                   run_id = mlflow_run_id,
                   client = tracker)
-
-png(file="feature_importances.png",
-    width=600, height=600)
-par(mar=c(4,10,2,2))
-barplot(workflow_fit$fit$fit$fit$variable.importance, horiz=1, las=1)
-dev.off()
-
-mlflow_log_artifact("feature_importances.png", 
-                    artifact_path = "",
-                    run_id = mlflow_run_id,
-                    client = tracker)
 
 mlflow_end_run(run_id = mlflow_run_id, client = tracker)
