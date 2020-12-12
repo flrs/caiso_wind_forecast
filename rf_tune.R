@@ -107,7 +107,7 @@ analysis_metric_set <- metric_set(rmse, rsq, mae)
 
 if(enable_parallel){
   registerDoFuture()
-  n_cores <- parallel::detectCores() -1
+  n_cores <- parallel::detectCores()
   plan(
     strategy = cluster,
     workers = parallel::makeCluster(n_cores)
@@ -120,7 +120,10 @@ tune_results <- workflow_tune %>%
     resamples = cv_splits,
     grid = grid_spec,
     metrics = analysis_metric_set,
-    control = control_grid(verbose = TRUE, save_pred = FALSE, allow_par = enable_parallel)
+    control = control_grid(verbose = TRUE,
+                           save_pred = FALSE,
+                           allow_par = enable_parallel,
+                           parallel_over = "everything")
   )
 
 if(enable_parallel){
