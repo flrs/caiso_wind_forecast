@@ -22,7 +22,7 @@ dataset <- "comb_data_rev4.RDS"
 
 # Validation settings ----
 
-n_samples_single <- 10000
+n_samples_single <- 180000
 n_samples_cv <- 10000
 cv_n_folds <- 4
 train_test_split_ratio <- 0.2
@@ -259,5 +259,10 @@ mlflow_log_artifact("feature_importances.png",
                     artifact_path = "",
                     run_id = mlflow_run_id,
                     client = tracker)
+
+feat_importances <- workflow_fit$fit$fit$fit$variable.importance
+top_feats <- sort(feat_importances, decreasing = TRUE) %>% head(round(length(feat_importances)*0.3))
+
+paste(names(top_feats), collapse=',')
 
 mlflow_end_run(run_id = mlflow_run_id, client = tracker)
