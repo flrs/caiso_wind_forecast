@@ -60,9 +60,9 @@ comb_data <- readRDS(dataset)
 
 splits <- time_series_split(
   comb_data %>% head(n_samples_single),
+  initial = n_samples_single*(1-train_test_split_ratio),
   assess = n_samples_single*train_test_split_ratio,
-  cumulative = TRUE,
-  lag=lag)
+  cumulative = TRUE)
 
 cv_splits <- comb_data %>%
   time_series_cv(
