@@ -24,7 +24,7 @@ dataset <- "comb_data_rev0.RDS"
 
 n_samples_single <- 10000
 n_samples_cv <- 10000
-cv_n_folds <- 2
+cv_n_folds <- 4
 train_test_split_ratio <- 0.2
 cv_skip_ratio <- 2
 
@@ -38,10 +38,10 @@ min_n <- 11
 
 tracker <- mlflow_client("http://localhost:5000")
 
-mlflow_create_experiment(
+tryCatch(mlflow_create_experiment(
   name = paste(algo_desc, "_", dataset, sep=""),
   client=tracker
-)
+), error=function(e){})
 
 mlflow_exp_info <- mlflow_get_experiment(
   name = paste(algo_desc, "_", dataset, sep=""),
@@ -104,8 +104,13 @@ model_spec <- rand_forest(
 
 # Run model ----
 
+tags <- list()
+tags['source'] <- system("git rev-parse HEAD", intern=TRUE)
+
 mlflow_run_info <- mlflow_start_run(experiment_id = mlflow_exp_id,
-                                    client = tracker)
+                                    client = tracker,
+                                    tags = tags)
+
 mlflow_run_id <- mlflow_run_info %>% slice(1) %>% pull(run_id)
 
 mlflow_log_param("features", paste(unlist(features), collapse=","), run_id = mlflow_run_id, client = tracker)
@@ -117,6 +122,7 @@ mlflow_log_param("train_test_split_ratio", train_test_split_ratio, run_id = mlfl
 mlflow_log_param("algo_desc", algo_desc, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("dataset", dataset, run_id = mlflow_run_id, client = tracker)
 
+set.seed(42)
 workflow_fit <- workflow() %>%
   add_recipe(recipe_spec) %>%
   add_model(model_spec) %>%
@@ -137,6 +143,7 @@ if(enable_parallel){
   )
 }
 
+set.seed(42)
 model_tbl_cv <- model_tbl %>%
   modeltime_fit_resamples(
     cv_splits,
@@ -161,16 +168,16 @@ score_oos <- model_tbl_predicted %>%
 
 score_oos
 
-mlflow_log_metric("rmse", score_oos %>% slice(1) %>% pull(rmse), 
-                  run_id = mlflow_run_id, 
+mlflow_log_metric("rmse", score_oos %>% slice(1) %>% pull(rmse),
+                  run_id = mlflow_run_id,
                   client = tracker)
 
-mlflow_log_metric("rsq", score_oos %>% slice(1) %>% pull(rsq), 
-                  run_id = mlflow_run_id, 
+mlflow_log_metric("rsq", score_oos %>% slice(1) %>% pull(rsq),
+                  run_id = mlflow_run_id,
                   client = tracker)
 
-mlflow_log_metric("mae", score_oos %>% slice(1) %>% pull(mae), 
-                  run_id = mlflow_run_id, 
+mlflow_log_metric("mae", score_oos %>% slice(1) %>% pull(mae),
+                  run_id = mlflow_run_id,
                   client = tracker)
 
 # In-Sample
@@ -183,16 +190,16 @@ score_is <- model_tbl_predicted %>%
 
 score_is
 
-mlflow_log_metric("rmse_insample", score_is %>% slice(1) %>% pull(rmse), 
-                  run_id = mlflow_run_id, 
+mlflow_log_metric("rmse_insample", score_is %>% slice(1) %>% pull(rmse),
+                  run_id = mlflow_run_id,
                   client = tracker)
 
-mlflow_log_metric("rsq_insample", score_is %>% slice(1) %>% pull(rsq), 
-                  run_id = mlflow_run_id, 
+mlflow_log_metric("rsq_insample", score_is %>% slice(1) %>% pull(rsq),
+                  run_id = mlflow_run_id,
                   client = tracker)
 
-mlflow_log_metric("mae_insample", score_is %>% slice(1) %>% pull(mae), 
-                  run_id = mlflow_run_id, 
+mlflow_log_metric("mae_insample", score_is %>% slice(1) %>% pull(mae),
+                  run_id = mlflow_run_id,
                   client = tracker)
 
 
@@ -206,28 +213,28 @@ score_cvs_oos <- model_tbl_cv %>%
 
 score_cvs_oos
 
-mlflow_log_metric("rmse_mean_cv", score_cvs_oos %>% slice(1) %>% pull(rmse_mean), 
-                  run_id = mlflow_run_id, 
+mlflow_log_metric("rmse_mean_cv", score_cvs_oos %>% slice(1) %>% pull(rmse_mean),
+                  run_id = mlflow_run_id,
                   client = tracker)
 
-mlflow_log_metric("rsq_mean_cv", score_cvs_oos %>% slice(1) %>% pull(rsq_mean), 
-                  run_id = mlflow_run_id, 
+mlflow_log_metric("rsq_mean_cv", score_cvs_oos %>% slice(1) %>% pull(rsq_mean),
+                  run_id = mlflow_run_id,
                   client = tracker)
 
-mlflow_log_metric("mae_mean_cv", score_cvs_oos %>% slice(1) %>% pull(mae_mean), 
-                  run_id = mlflow_run_id, 
+mlflow_log_metric("mae_mean_cv", score_cvs_oos %>% slice(1) %>% pull(mae_mean),
+                  run_id = mlflow_run_id,
                   client = tracker)
 
-mlflow_log_metric("rmse_sd_cv", score_cvs_oos %>% slice(1) %>% pull(rmse_sd), 
-                  run_id = mlflow_run_id, 
+mlflow_log_metric("rmse_sd_cv", score_cvs_oos %>% slice(1) %>% pull(rmse_sd),
+                  run_id = mlflow_run_id,
                   client = tracker)
 
-mlflow_log_metric("rsq_sd_cv", score_cvs_oos %>% slice(1) %>% pull(rsq_sd), 
-                  run_id = mlflow_run_id, 
+mlflow_log_metric("rsq_sd_cv", score_cvs_oos %>% slice(1) %>% pull(rsq_sd),
+                  run_id = mlflow_run_id,
                   client = tracker)
 
-mlflow_log_metric("mae_sd_cv", score_cvs_oos %>% slice(1) %>% pull(mae_sd), 
-                  run_id = mlflow_run_id, 
+mlflow_log_metric("mae_sd_cv", score_cvs_oos %>% slice(1) %>% pull(mae_sd),
+                  run_id = mlflow_run_id,
                   client = tracker)
 
 png(file="feature_importances.png",
@@ -237,8 +244,8 @@ barplot(workflow_fit$fit$fit$fit$variable.importance, horiz=1, las=1)
 dev.off()
 
 mlflow_log_artifact("feature_importances.png", 
-                    artifact_path = "", 
-                    run_id = mlflow_run_id, 
+                    artifact_path = "",
+                    run_id = mlflow_run_id,
                     client = tracker)
 
 mlflow_end_run(run_id = mlflow_run_id, client = tracker)
