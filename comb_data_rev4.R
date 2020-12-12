@@ -64,7 +64,7 @@ comb_data_padded <- comb_data %>%
 comb_data_padded <- comb_data_padded %>%
   tk_augment_lags(
     .value = matches("_wind|temp"),
-    .lags = c(1, 9, 23*60/5)) %>%
+    .lags = c(1, 9, 276)) %>%
   drop_na()
 
 saveRDS(comb_data_padded, "comb_data_rev4.rds")

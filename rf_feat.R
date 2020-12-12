@@ -27,6 +27,7 @@ n_samples_cv <- 10000
 cv_n_folds <- 4
 train_test_split_ratio <- 0.2
 cv_skip_ratio <- 2
+lag <- 276
 
 # Model settings ----
 
@@ -57,9 +58,11 @@ comb_data <- readRDS(dataset)
 
 # Arrange data for ML ----
 
-splits <- time_series_split(comb_data %>% head(n_samples_single),
-                            assess = n_samples_single*train_test_split_ratio,
-                            cumulative = TRUE)
+splits <- time_series_split(
+  comb_data %>% head(n_samples_single),
+  assess = n_samples_single*train_test_split_ratio,
+  cumulative = TRUE,
+  lag=lag)
 
 cv_splits <- comb_data %>%
   time_series_cv(
@@ -67,7 +70,8 @@ cv_splits <- comb_data %>%
     slice_limit = cv_n_folds,
     initial = n_samples_cv,
     assess = n_samples_cv*train_test_split_ratio,
-    skip=n_samples_cv*cv_skip_ratio
+    skip=n_samples_cv*cv_skip_ratio,
+    lag = lag
   )
 
 
@@ -116,17 +120,19 @@ mlflow_run_info <- mlflow_start_run(experiment_id = mlflow_exp_id,
 
 mlflow_run_id <- mlflow_run_info %>% slice(1) %>% pull(run_id)
 
-mlflow_log_param("features", paste(unlist(features), collapse=","), run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("mtry", mtry, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("trees", trees, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("min_n", min_n, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("max_depth", max_depth, run_id = mlflow_run_id, client = tracker)
+
+mlflow_log_param("features", paste(unlist(features), collapse=","), run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("n_samples_single", n_samples_single, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("n_samples_cv", n_samples_cv, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("cv_n_folds", cv_n_folds, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("train_test_split_ratio", train_test_split_ratio, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("algo_desc", algo_desc, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("dataset", dataset, run_id = mlflow_run_id, client = tracker)
+mlflow_log_param("lag", lag, run_id = mlflow_run_id, client = tracker)
 
 set.seed(42)
 workflow_fit <- workflow() %>%
