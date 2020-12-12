@@ -61,7 +61,7 @@ comb_data_padded %>%
                        Wind,
                        .ccf_vars = `1_wind`)
 
-comb_data_padded %>%
+comb_data_padded <- comb_data_padded %>%
   tk_augment_lags(
     .value = matches("_wind|temp"),
     .lags = c(1, 9, 23*60/5))
