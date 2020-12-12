@@ -79,23 +79,6 @@ cv_splits <- comb_data %>%
 
 recipe_spec <- recipe(formula = Wind ~ .,
                       data = training(splits)) %>%
-    step_timeseries_signature(Time) %>%
-    step_rm(ends_with(".num")) %>%
-    step_rm(contains("year")) %>%
-    step_rm(contains("mday")) %>%
-    step_rm(contains("qday")) %>%
-    step_rm(contains("yday")) %>%
-    step_rm(contains("minute")) %>%
-    step_rm(contains("hour12")) %>%
-    step_rm(contains("second")) %>%
-    step_rm(contains("am.pm")) %>%
-    step_rm(contains(".iso")) %>%
-    step_rm(contains("mweek")) %>%
-    step_rm(contains("week2")) %>%
-    step_rm(contains("week3")) %>%
-    step_rm(contains("week4")) %>%
-    step_rm(ends_with("xts")) %>%
-    step_rm(ends_with("lbl")) %>%
     step_rm("Time")
 
 recipe_spec %>% prep() %>% juice() %>% glimpse()

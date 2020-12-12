@@ -86,6 +86,7 @@ comb_data_padded <- comb_data_padded %>%
      .holiday_pattern = "none",
      .exchange_set    = "none"
   ) %>%
+  tk_augment_timeseries_signature(Time) %>%
   drop_na()
 
 comb_data_padded <- comb_data_padded %>%
