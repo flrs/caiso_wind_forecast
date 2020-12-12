@@ -18,7 +18,7 @@ library(mlflow)
 
 enable_parallel <- T
 algo_desc <- "rf_feat"
-dataset <- "comb_data_rev1.RDS"
+dataset <- "comb_data_rev2.RDS"
 
 # Validation settings ----
 
@@ -31,9 +31,9 @@ cv_skip_ratio <- 2
 # Model settings ----
 
 mtry <- 5
-trees <- 300
-min_n <- 30
-max_depth <- 8
+trees <- 200
+min_n <- 20
+max_depth <- 4
 
 # Set up MLFlow ----
 
