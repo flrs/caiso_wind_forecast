@@ -102,7 +102,7 @@ model_spec <- rand_forest(
     min_n = min_n
   ) %>%
   set_engine("ranger",
-             max_depth = max_depth,
+             max.depth = max_depth,
              importance="impurity")
 
 # Run model ----
