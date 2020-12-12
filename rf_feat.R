@@ -31,7 +31,7 @@ cv_skip_ratio <- 2
 # Model settings ----
 
 mtry <- 5
-trees <- 200
+trees <- 300
 min_n <- 30
 max_depth <- 8
 
