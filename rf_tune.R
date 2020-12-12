@@ -105,7 +105,7 @@ grid_spec <- grid_latin_hypercube(
       min_n = min_n(range = min_n),
       trees = trees(range = trees),
       mtry = mtry(range = mtry),
-      max.depth = mtry(range = max_depth)
+      max.depth = num_terms(range = max_depth)
     ),
   size = grid_size
 )
