@@ -25,7 +25,7 @@ dataset <- "comb_data_rev7.RDS"
 # Validation settings ----
 
 n_samples_single <- 10000
-n_samples_cv <- 40000
+n_samples_cv <- 50000
 cv_n_folds <- 4
 train_test_split_ratio <- 0.2
 cv_skip_ratio <- 2
@@ -33,10 +33,10 @@ lag <- 300
 
 # Model settings ----
 
-mtry <- c(7, 58)
+mtry <- c(40, 70)
 trees <- c(182, 153)
-min_n <- c(9, 39)
-max_depth <- c(25, 47)
+min_n <- c(27, 50)
+max_depth <- c(25, 60)
 
 # Tuning settings ----
 
