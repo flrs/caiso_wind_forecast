@@ -33,10 +33,10 @@ lag <- 300
 
 # Model settings ----
 
-mtry <- c(2, 188)
-trees <- c(100, 600)
-min_n <- c(5, 40)
-max_depth <- c(3, 80)
+mtry <- c(7, 58)
+trees <- c(182, 153)
+min_n <- c(9, 39)
+max_depth <- c(25, 47)
 
 # Tuning settings ----
 
