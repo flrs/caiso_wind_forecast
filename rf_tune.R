@@ -25,7 +25,6 @@ allow_git <- T
 
 # Validation settings ----
 
-n_samples_single <- 1000
 n_samples_cv <- 55000
 cv_n_folds <- 4
 train_test_split_ratio <- 0.2
@@ -48,12 +47,6 @@ grid_size <- 20
 comb_data <- readRDS(dataset)
 
 # Arrange data for ML ----
-
-splits <- time_series_split(
-  comb_data %>% head(n_samples_single),
-  initial = n_samples_single*(1-train_test_split_ratio),
-  assess = n_samples_single*train_test_split_ratio,
-  cumulative = TRUE)
 
 cv_splits <- comb_data %>%
   time_series_cv(
@@ -88,9 +81,8 @@ grid_spec <- grid_latin_hypercube(
   parameters(model_spec_tune) %>%
     update(
       min_n = min_n(range = min_n),
-      trees = trees(range = trees),
       mtry = mtry(range = mtry),
-      sample.fraction = threshold(range = max_depth)
+      sample.fraction = threshold(range = sample.fraction)
     ),
   size = grid_size
 )
@@ -157,12 +149,10 @@ upload_results <- function (content, name) {
   mlflow_run_id <- mlflow_run_info %>% slice(1) %>% pull(run_id)
 
   mlflow_log_param("mtry", content %>% slice(1) %>% pull("mtry"), run_id = mlflow_run_id, client = tracker)
-  mlflow_log_param("trees", content %>% slice(1) %>% pull("trees"), run_id = mlflow_run_id, client = tracker)
   mlflow_log_param("min_n", content %>% slice(1) %>% pull("min_n"), run_id = mlflow_run_id, client = tracker)
-  mlflow_log_param("max_depth", content %>% slice(1) %>% pull("max.depth"), run_id = mlflow_run_id, client = tracker)
+  mlflow_log_param("sample_fraction", content %>% slice(1) %>% pull("sample.fraction"), run_id = mlflow_run_id, client = tracker)
 
   mlflow_log_param("features", paste(unlist(features), collapse=","), run_id = mlflow_run_id, client = tracker)
-  mlflow_log_param("n_samples_single", n_samples_single, run_id = mlflow_run_id, client = tracker)
   mlflow_log_param("n_samples_cv", n_samples_cv, run_id = mlflow_run_id, client = tracker)
   mlflow_log_param("cv_n_folds", cv_n_folds, run_id = mlflow_run_id, client = tracker)
   mlflow_log_param("train_test_split_ratio", train_test_split_ratio, run_id = mlflow_run_id, client = tracker)
