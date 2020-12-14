@@ -22,7 +22,7 @@ dataset <- "comb_data_rev8.RDS"
 
 # Validation settings ----
 
-n_samples_single <- 150000
+n_samples_single <- 180000
 n_samples_cv <- 30000
 cv_n_folds <- 4
 train_test_split_ratio <- 0.2
@@ -32,7 +32,7 @@ lag <- 300
 # Model settings ----
 
 mtry <- 57
-trees <- 400
+trees <- 1000
 min_n <- 2
 sample.fraction <- 0.898
 
