@@ -21,7 +21,7 @@ library(mlflow)
 enable_parallel <- T
 algo_desc <- "rf_tune"
 dataset <- "comb_data_rev8.RDS"
-allow_git <- F
+allow_git <- T
 
 # Validation settings ----
 
