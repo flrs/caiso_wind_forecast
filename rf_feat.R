@@ -22,8 +22,8 @@ dataset <- "comb_data_rev7.RDS"
 
 # Validation settings ----
 
-n_samples_single <- 10000
-n_samples_cv <- 10000
+n_samples_single <- 80000
+n_samples_cv <- 40000
 cv_n_folds <- 4
 train_test_split_ratio <- 0.2
 cv_skip_ratio <- 2
@@ -31,10 +31,10 @@ lag <- 300
 
 # Model settings ----
 
-mtry <- 6
-trees <- 400
-min_n <- 15
-max_depth <- 6
+mtry <- 57
+trees <- 1000
+min_n <- 2
+sample.fraction <- 0.898
 
 # Set up MLFlow ----
 
@@ -92,7 +92,7 @@ model_spec <- rand_forest(
     min_n = min_n
   ) %>%
   set_engine("ranger",
-             max.depth = max_depth,
+             sample.fraction = sample.fraction,
              importance="impurity")
 
 # Run model ----
@@ -109,7 +109,7 @@ mlflow_run_id <- mlflow_run_info %>% slice(1) %>% pull(run_id)
 mlflow_log_param("mtry", mtry, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("trees", trees, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("min_n", min_n, run_id = mlflow_run_id, client = tracker)
-mlflow_log_param("max_depth", max_depth, run_id = mlflow_run_id, client = tracker)
+mlflow_log_param("sample_fraction", sample.fraction, run_id = mlflow_run_id, client = tracker)
 
 mlflow_log_param("features", paste(unlist(features), collapse=","), run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("n_samples_single", n_samples_single, run_id = mlflow_run_id, client = tracker)
