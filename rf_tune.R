@@ -20,23 +20,24 @@ library(mlflow)
 
 enable_parallel <- T
 algo_desc <- "rf_tune"
-dataset <- "comb_data_rev7.RDS"
+dataset <- "comb_data_rev8.RDS"
+allow_git <- F
 
 # Validation settings ----
 
-n_samples_single <- 10000
-n_samples_cv <- 40000
+n_samples_single <- 1000
+n_samples_cv <- 55000
 cv_n_folds <- 4
 train_test_split_ratio <- 0.2
-cv_skip_ratio <- 2
+cv_skip_ratio <- 1
 lag <- 300
 
 # Model settings ----
 
 mtry <- c(40, 70)
-trees <- c(182, 153)
-min_n <- c(27, 50)
-max_depth <- c(25, 60)
+min_n <- c(2, 50)
+sample.fraction <- c(0.1, 0.99)
+trees <- 1000
 
 # Tuning settings ----
 
@@ -68,7 +69,7 @@ cv_splits <- comb_data %>%
 # Define recipe and model ----
 
 recipe_spec <- recipe(formula = Wind ~ .,
-                      data = training(splits)) %>%
+                      data = comb_data) %>%
     step_rm("Time")
 
 features <- names(recipe_spec %>% prep() %>% juice())
@@ -76,11 +77,11 @@ features <- names(recipe_spec %>% prep() %>% juice())
 model_spec_tune <- rand_forest(
   mode = "regression",
   mtry = tune(),
-  trees = tune(),
+  trees = 1000,
   min_n = tune()
 ) %>%
   set_engine("ranger",
-             max.depth = tune(),
+             sample.fraction = tune(),
              importance="impurity")
 
 grid_spec <- grid_latin_hypercube(
@@ -89,7 +90,7 @@ grid_spec <- grid_latin_hypercube(
       min_n = min_n(range = min_n),
       trees = trees(range = trees),
       mtry = mtry(range = mtry),
-      max.depth = num_terms(range = max_depth)
+      sample.fraction = threshold(range = max_depth)
     ),
   size = grid_size
 )
@@ -97,7 +98,9 @@ grid_spec <- grid_latin_hypercube(
 # Run model ----
 
 tags <- list()
-tags['source'] <- system("git rev-parse HEAD", intern=TRUE)
+if(allow_git){
+  tags['source'] <- system("git rev-parse HEAD", intern=TRUE)
+}
 
 workflow_tune <- workflow() %>%
   add_recipe(recipe_spec) %>%
