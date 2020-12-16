@@ -87,7 +87,7 @@ recipe_spec <- recipe(formula = Wind ~ .,
 
 features <- names(recipe_spec %>% prep() %>% juice())
 
-model_spec <- rand_forest(
+model_spec <- boost_tree(
     mode = "regression",
     tree_depth = tree_depth,
     sample_size = sample_size,
