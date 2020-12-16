@@ -70,7 +70,6 @@ recipe_spec <- recipe(formula = Wind ~ .,
 features <- names(recipe_spec %>% prep() %>% juice())
 
 mtry <- c(round(length(features)*mtry[1],0),round(length(features)*mtry[2],0))
-sample_size <- c(round(n_samples_cv*sample_size[1],0),round(n_samples_cv*sample_size[2],0))
 
 model_spec_tune <- boost_tree(
   mode = "regression",
@@ -87,7 +86,7 @@ grid_spec <- grid_latin_hypercube(
   parameters(model_spec_tune) %>%
     update(
       tree_depth = tree_depth(range = tree_depth),
-      sample_size = sample_size(range = sample_size),
+      sample_size = sample_prop(range = sample_size),
       mtry = mtry(range = mtry),
       min_n = min_n(range = min_n),
     ),
