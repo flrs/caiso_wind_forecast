@@ -32,7 +32,7 @@ lag <- 300
 
 # Model settings ----
 
-tree_depth <- 7
+tree_depth <- 8
 sample_size <- 0.5
 mtry <- 0.5
 min_n <- 150
