@@ -96,10 +96,10 @@ model_spec <- boost_tree(
     min_n = min_n,
     learn_rate = learn_rate,
     trees = 1000,
-    stop_iter = stop_iter,
-    validation = train_test_split_ratio,
+    stop_iter = stop_iter
     ) %>%
-  set_engine("xgboost")
+  set_engine("xgboost",
+             validation = train_test_split_ratio)
 
 # Run model ----
 
