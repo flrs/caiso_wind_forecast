@@ -151,6 +151,7 @@ upload_results <- function (content, name) {
   mlflow_log_param("mtry", content %>% slice(1) %>% pull("mtry"), run_id = mlflow_run_id, client = tracker)
   mlflow_log_param("min_n", content %>% slice(1) %>% pull("min_n"), run_id = mlflow_run_id, client = tracker)
   mlflow_log_param("sample_fraction", content %>% slice(1) %>% pull("sample.fraction"), run_id = mlflow_run_id, client = tracker)
+  mlflow_log_param("trees", trees, run_id = mlflow_run_id, client = tracker)
 
   mlflow_log_param("features", paste(unlist(features), collapse=","), run_id = mlflow_run_id, client = tracker)
   mlflow_log_param("n_samples_cv", n_samples_cv, run_id = mlflow_run_id, client = tracker)
