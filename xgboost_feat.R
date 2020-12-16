@@ -34,7 +34,7 @@ lag <- 300
 
 tree_depth <- 7
 sample_size <- 0.5
-mtry <- 0.1
+mtry <- 0.5
 min_n <- 3
 learn_rate <- 0.1
 trees <- 500
