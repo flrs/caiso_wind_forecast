@@ -17,8 +17,9 @@ library(mlflow)
 # Set Run Config ----
 
 enable_parallel <- T
+enable_cv <- F
 algo_desc <- "xgboost_feat"
-dataset <- "comb_data_rev3.RDS"
+dataset <- "comb_data_rev8.RDS"
 
 # Validation settings ----
 
@@ -27,15 +28,16 @@ n_samples_cv <- 10000
 cv_n_folds <- 4
 train_test_split_ratio <- 0.2
 cv_skip_ratio <- 2
+lag <- 300
 
 # Model settings ----
 
-mtry <- 25
-trees <- 1000
-min_n <- 2
-tree_depth <- 12
-learn_rate <- 0.3
-loss_reduction <- 0
+tree_depth <- 7
+sample_size <- 0.2
+mtry <- 0.1
+min_n <- 3
+learn_rate <- 0.1
+trees <- 500
 
 # Set up MLFlow ----
 
@@ -59,53 +61,41 @@ comb_data <- readRDS(dataset)
 
 # Arrange data for ML ----
 
-splits <- time_series_split(comb_data %>% head(n_samples_single),
-                            assess = n_samples_single*train_test_split_ratio,
-                            cumulative = TRUE)
+splits <- time_series_split(
+  comb_data %>% head(n_samples_single),
+  initial = n_samples_single*(1-train_test_split_ratio),
+  assess = n_samples_single*train_test_split_ratio,
+  cumulative = TRUE)
 
-cv_splits <- comb_data %>%
-  time_series_cv(
-    cumulative = FALSE,
-    slice_limit = cv_n_folds,
-    initial = n_samples_cv,
-    assess = n_samples_cv*train_test_split_ratio,
-    skip=n_samples_cv*cv_skip_ratio
-  )
-
+if(enable_cv){
+  cv_splits <- comb_data %>%
+    time_series_cv(
+      cumulative = FALSE,
+      slice_limit = cv_n_folds,
+      initial = n_samples_cv,
+      assess = n_samples_cv*train_test_split_ratio,
+      skip=n_samples_cv*cv_skip_ratio,
+      lag = lag
+    )
+}
 
 # Define recipe and model ----
 
 recipe_spec <- recipe(formula = Wind ~ .,
                       data = training(splits)) %>%
-    step_timeseries_signature(Time) %>%
-    step_rm(ends_with(".num")) %>%
-    step_rm(contains("year")) %>%
-    step_rm(contains("day")) %>%
-    step_rm(contains("minute")) %>%
-    step_rm(contains("hour12")) %>%
-    step_rm(contains("second")) %>%
-    step_rm(contains("am.pm")) %>%
-    step_rm(contains(".iso")) %>%
-    step_rm(contains("mweek")) %>%
-    step_rm(contains("week2")) %>%
-    step_rm(contains("week3")) %>%
-    step_rm(contains("week4")) %>%
-    step_rm(contains("wday")) %>%
-    step_rm(ends_with("xts")) %>%
-    step_rm(ends_with("lbl")) %>%
     step_rm("Time")
 
 features <- names(recipe_spec %>% prep() %>% juice())
 
-model_spec <- boost_tree(
-  mode = "regression",
-  mtry = mtry,
-  trees = trees,
-  min_n = min_n,
-  tree_depth = tree_depth,
-  learn_rate = learn_rate,
-  loss_reduction = loss_reduction
-) %>%
+model_spec <- rand_forest(
+    mode = "regression",
+    tree_depth = tree_depth,
+    sample_size = sample_size,
+    mtry = mtry,
+    min_n = min_n,
+    learn_rate = learn_rate,
+    trees = 1000
+    ) %>%
   set_engine("xgboost")
 
 # Run model ----
@@ -119,12 +109,12 @@ mlflow_run_info <- mlflow_start_run(experiment_id = mlflow_exp_id,
 
 mlflow_run_id <- mlflow_run_info %>% slice(1) %>% pull(run_id)
 
-mlflow_log_param("mtry", mtry, run_id = mlflow_run_id, client = tracker)
-mlflow_log_param("trees", trees, run_id = mlflow_run_id, client = tracker)
-mlflow_log_param("min_n", min_n, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("tree_depth", tree_depth, run_id = mlflow_run_id, client = tracker)
+mlflow_log_param("sample_size", sample_size, run_id = mlflow_run_id, client = tracker)
+mlflow_log_param("mtry", mtry, run_id = mlflow_run_id, client = tracker)
+mlflow_log_param("min_n", min_n, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("learn_rate", learn_rate, run_id = mlflow_run_id, client = tracker)
-mlflow_log_param("loss_reduction", loss_reduction, run_id = mlflow_run_id, client = tracker)
+mlflow_log_param("trees", trees, run_id = mlflow_run_id, client = tracker)
 
 mlflow_log_param("features", paste(unlist(features), collapse=","), run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("n_samples_single", n_samples_single, run_id = mlflow_run_id, client = tracker)
@@ -133,6 +123,7 @@ mlflow_log_param("cv_n_folds", cv_n_folds, run_id = mlflow_run_id, client = trac
 mlflow_log_param("train_test_split_ratio", train_test_split_ratio, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("algo_desc", algo_desc, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("dataset", dataset, run_id = mlflow_run_id, client = tracker)
+mlflow_log_param("lag", lag, run_id = mlflow_run_id, client = tracker)
 
 set.seed(42)
 workflow_fit <- workflow() %>%
@@ -146,24 +137,26 @@ model_tbl <- modeltime_table(
 
 analysis_metric_set <- metric_set(rmse, rsq, mae)
 
-if(enable_parallel){
-  registerDoFuture()
-  n_cores <- parallel::detectCores() -1
-  plan(
-    strategy = cluster,
-    workers = parallel::makeCluster(n_cores)
-  )
-}
+if(enable_cv){
+  if(enable_parallel){
+    registerDoFuture()
+    n_cores <- parallel::detectCores() -1
+    plan(
+      strategy = cluster,
+      workers = parallel::makeCluster(n_cores)
+    )
+  }
 
-set.seed(42)
-model_tbl_cv <- model_tbl %>%
-  modeltime_fit_resamples(
-    cv_splits,
-    control = control_resamples(verbose = TRUE, allow_par = enable_parallel)
-  )
+  set.seed(42)
+  model_tbl_cv <- model_tbl %>%
+    modeltime_fit_resamples(
+      cv_splits,
+      control = control_resamples(verbose = TRUE, allow_par = enable_parallel)
+    )
 
-if(enable_parallel){
-  plan(strategy = sequential)
+  if(enable_parallel){
+    plan(strategy = sequential)
+  }
 }
 
 model_tbl_predicted <- model_tbl %>%
@@ -216,37 +209,38 @@ mlflow_log_metric("mae_insample", score_is %>% slice(1) %>% pull(mae),
 
 
 # Cross-Validation Out-of-Sample
+if(enable_cv){
+  score_cvs_oos <- model_tbl_cv %>%
+    modeltime_resample_accuracy(
+      metric_set = analysis_metric_set,
+      summary_fns = list(mean=mean, sd=sd)
+    )
 
-score_cvs_oos <- model_tbl_cv %>%
-  modeltime_resample_accuracy(
-    metric_set = analysis_metric_set,
-    summary_fns = list(mean=mean, sd=sd)
-  )
+  score_cvs_oos
 
-score_cvs_oos
+  mlflow_log_metric("rmse_mean_cv", score_cvs_oos %>% slice(1) %>% pull(rmse_mean),
+                    run_id = mlflow_run_id,
+                    client = tracker)
 
-mlflow_log_metric("rmse_mean_cv", score_cvs_oos %>% slice(1) %>% pull(rmse_mean),
-                  run_id = mlflow_run_id,
-                  client = tracker)
+  mlflow_log_metric("rsq_mean_cv", score_cvs_oos %>% slice(1) %>% pull(rsq_mean),
+                    run_id = mlflow_run_id,
+                    client = tracker)
 
-mlflow_log_metric("rsq_mean_cv", score_cvs_oos %>% slice(1) %>% pull(rsq_mean),
-                  run_id = mlflow_run_id,
-                  client = tracker)
+  mlflow_log_metric("mae_mean_cv", score_cvs_oos %>% slice(1) %>% pull(mae_mean),
+                    run_id = mlflow_run_id,
+                    client = tracker)
 
-mlflow_log_metric("mae_mean_cv", score_cvs_oos %>% slice(1) %>% pull(mae_mean),
-                  run_id = mlflow_run_id,
-                  client = tracker)
+  mlflow_log_metric("rmse_sd_cv", score_cvs_oos %>% slice(1) %>% pull(rmse_sd),
+                    run_id = mlflow_run_id,
+                    client = tracker)
 
-mlflow_log_metric("rmse_sd_cv", score_cvs_oos %>% slice(1) %>% pull(rmse_sd),
-                  run_id = mlflow_run_id,
-                  client = tracker)
+  mlflow_log_metric("rsq_sd_cv", score_cvs_oos %>% slice(1) %>% pull(rsq_sd),
+                    run_id = mlflow_run_id,
+                    client = tracker)
 
-mlflow_log_metric("rsq_sd_cv", score_cvs_oos %>% slice(1) %>% pull(rsq_sd),
-                  run_id = mlflow_run_id,
-                  client = tracker)
-
-mlflow_log_metric("mae_sd_cv", score_cvs_oos %>% slice(1) %>% pull(mae_sd),
-                  run_id = mlflow_run_id,
-                  client = tracker)
+  mlflow_log_metric("mae_sd_cv", score_cvs_oos %>% slice(1) %>% pull(mae_sd),
+                    run_id = mlflow_run_id,
+                    client = tracker)
+}
 
 mlflow_end_run(run_id = mlflow_run_id, client = tracker)
