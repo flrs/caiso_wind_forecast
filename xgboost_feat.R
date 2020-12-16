@@ -23,7 +23,7 @@ dataset <- "comb_data_rev8.RDS"
 
 # Validation settings ----
 
-n_samples_single <- 10000
+n_samples_single <- 40000
 n_samples_cv <- 10000
 cv_n_folds <- 4
 train_test_split_ratio <- 0.2
@@ -33,10 +33,10 @@ lag <- 300
 # Model settings ----
 
 tree_depth <- 8
-sample_size <- 0.9
+sample_size <- 0.5
 mtry <- 0.5
-min_n <- 150
-learn_rate <- 0.01
+min_n <- 3
+learn_rate <- 0.1
 trees <- 500
 stop_iter <- 10
 
