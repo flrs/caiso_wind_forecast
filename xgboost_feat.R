@@ -38,6 +38,7 @@ mtry <- 0.5
 min_n <- 3
 learn_rate <- 0.1
 trees <- 500
+stop_iter <- 10
 
 # Set up MLFlow ----
 
@@ -94,7 +95,8 @@ model_spec <- boost_tree(
     mtry = mtry,
     min_n = min_n,
     learn_rate = learn_rate,
-    trees = 1000
+    trees = 1000,
+    stop_iter = stop_iter
     ) %>%
   set_engine("xgboost")
 
@@ -115,6 +117,7 @@ mlflow_log_param("mtry", mtry, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("min_n", min_n, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("learn_rate", learn_rate, run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("trees", trees, run_id = mlflow_run_id, client = tracker)
+mlflow_log_param("stop_iter", stop_iter, run_id = mlflow_run_id, client = tracker)
 
 mlflow_log_param("features", paste(unlist(features), collapse=","), run_id = mlflow_run_id, client = tracker)
 mlflow_log_param("n_samples_single", n_samples_single, run_id = mlflow_run_id, client = tracker)
