@@ -3,12 +3,13 @@ options(tidymodels.dark = TRUE)
 
 library(mlflow)
 
-experiment_name <- "rf_tune_rapids"
-file_name <- "/Users/florian/Downloads/run6_5_cv.csv"
+experiment_name <- "xgboost_tune_rapids"
+file_name <- "/Users/florian/Downloads/xgb1.csv"
 parameters <- c(
-"min_rows_per_node",
-"rows_sample",
-"max_features"
+"tree_depth",
+"sample_size",
+"mtry",
+"learn_rate"
 )
 metrics <- c(
   "mae",
