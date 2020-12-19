@@ -25,7 +25,7 @@ allow_git <- T
 
 # Validation settings ----
 
-n_samples_cv <- 10000
+n_samples_cv <- 20000
 cv_n_folds <- 4
 train_test_split_ratio <- 0.2
 cv_skip_ratio <- 1
@@ -36,13 +36,14 @@ lag <- 300
 tree_depth <- c(5, 9)
 sample_size <- c(0.1, 0.9)
 mtry <- c(0.1, 0.9)
-min_n <- c(2, 50)
-learn_rate <- 0.1
+min_n <- c(2, 500)
+learn_rate <- c(-10, -1)
 trees <- 1000
+stop_iter <- 10
 
 # Tuning settings ----
 
-grid_size <- 2
+grid_size <- 20
 
 # Load data ----
 
@@ -77,10 +78,11 @@ model_spec_tune <- boost_tree(
   sample_size = tune(),
   mtry = tune(),
   min_n = tune(),
-  learn_rate = learn_rate,
-  trees = 1000
+  learn_rate = tune(),
+  trees = trees
 ) %>%
-  set_engine("xgboost")
+  set_engine("xgboost",
+             validation = train_test_split_ratio,  stop_iter = stop_iter)
 
 grid_spec <- grid_latin_hypercube(
   parameters(model_spec_tune) %>%
@@ -89,6 +91,7 @@ grid_spec <- grid_latin_hypercube(
       sample_size = sample_prop(range = sample_size),
       mtry = mtry(range = mtry),
       min_n = min_n(range = min_n),
+      learn_rate = learn_rate(range = learn_rate)
     ),
   size = grid_size
 )
@@ -158,9 +161,10 @@ upload_results <- function (content, name) {
   mlflow_log_param("sample_size", content %>% slice(1) %>% pull("sample_size"), run_id = mlflow_run_id, client = tracker)
   mlflow_log_param("mtry", content %>% slice(1) %>% pull("mtry"), run_id = mlflow_run_id, client = tracker)
   mlflow_log_param("min_n", content %>% slice(1) %>% pull("min_n"), run_id = mlflow_run_id, client = tracker)
+  mlflow_log_param("learn_rate", content %>% slice(1) %>% pull("learn_rate"), run_id = mlflow_run_id, client = tracker)
 
+  mlflow_log_param("stop_iter", stop_iter, run_id = mlflow_run_id, client = tracker)
   mlflow_log_param("trees", trees, run_id = mlflow_run_id, client = tracker)
-  mlflow_log_param("learn_rate", learn_rate, run_id = mlflow_run_id, client = tracker)
 
   mlflow_log_param("features", paste(unlist(features), collapse=","), run_id = mlflow_run_id, client = tracker)
   mlflow_log_param("n_samples_cv", n_samples_cv, run_id = mlflow_run_id, client = tracker)
