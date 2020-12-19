@@ -97,18 +97,14 @@ recipe_spec <- recipe(formula = Wind ~ .,
 features <- names(recipe_spec %>% prep() %>% juice())
 
 for(x in 1:nrow(model_parameters)){
-  mtry_target <- model_parameters %>% slice(x) %>% pull(mtry)
-  trees_target <- model_parameters %>% slice(x) %>% pull(trees)
-  min_n_target <- model_parameters %>% slice(x) %>% pull(min_n)
-  sample_fraction_target <- model_parameters %>% slice(x) %>% pull(sample.fraction)
   model_spec <- rand_forest(
       mode = "regression",
-      mtry = mtry_target,
-      trees = trees_target,
-      min_n = min_n_target
+      mtry = !!(model_parameters %>% slice(x) %>% pull(mtry)),
+      trees = !!(model_parameters %>% slice(x) %>% pull(trees)),
+      min_n = !!(model_parameters %>% slice(x) %>% pull(min_n))
     ) %>%
     set_engine("ranger",
-               sample.fraction = sample_fraction_target,
+               sample.fraction = !!(model_parameters %>% slice(x) %>% pull(sample.fraction)),
                importance="impurity")
 
   # Run model ----
