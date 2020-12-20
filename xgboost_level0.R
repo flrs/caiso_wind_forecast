@@ -39,12 +39,14 @@ learn_rate <- c(0.0960214107678631, 0.104404198674058, 0.1)
 mtry <- c(88, 180, 115)
 sample_size <- c(0.67659, 0.667839314496766, 0.60283372461802)
 tree_depth <- c(3, 4, 3)
+stop_iter <- c(10, 10, 10)
 
 model_parameters <- tibble(
   learn_rate = learn_rate,
   mtry = mtry,
   sample_size = sample_size,
-  tree_depth = tree_depth
+  tree_depth = tree_dept,
+  stop_iter = stop_iter
 )
 
 # Set up MLFlow ----
@@ -108,7 +110,9 @@ for(x in 1:nrow(model_parameters)){
       tree_depth = !!(model_parameters %>% slice(x) %>% pull(tree_depth))
     ) %>%
     set_engine("xgboost",
-             validation = train_test_split_ratio)
+               validation = !!(1-test_ratio),
+               stop_iter = !!(model_parameters %>% slice(x) %>% pull(stop_iter))
+    )
 
   # Run model ----
 
@@ -129,6 +133,7 @@ for(x in 1:nrow(model_parameters)){
   mlflow_log_param("mtry", model_parameters %>% slice(x) %>% pull(mtry), run_id = mlflow_run_id, client = tracker)
   mlflow_log_param("sample_size", model_parameters %>% slice(x) %>% pull(sample_size), run_id = mlflow_run_id, client = tracker)
   mlflow_log_param("tree_depth", model_parameters %>% slice(x) %>% pull(tree_depth), run_id = mlflow_run_id, client = tracker)
+  mlflow_log_param("stop_iter", model_parameters %>% slice(x) %>% pull(stop_iter), run_id = mlflow_run_id, client = tracker)
 
   mlflow_log_param("features", paste(unlist(features), collapse=","), run_id = mlflow_run_id, client = tracker)
   mlflow_log_param("n_samples_total", n_samples_total, run_id = mlflow_run_id, client = tracker)
