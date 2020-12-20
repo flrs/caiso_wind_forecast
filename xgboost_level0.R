@@ -45,7 +45,7 @@ model_parameters <- tibble(
   learn_rate = learn_rate,
   mtry = mtry,
   sample_size = sample_size,
-  tree_depth = tree_dept,
+  tree_depth = tree_depth,
   stop_iter = stop_iter
 )
 
