@@ -34,7 +34,7 @@ lag <- 300
 
 # Model settings ----
 
-committees <- c(1, 100)
+committees <- c(70, 100)
 neighbors <- c(0, 9)
 max_rules <- c(1, 800)
 
@@ -100,7 +100,7 @@ analysis_metric_set <- metric_set(rmse, rsq, mae)
 
 if(enable_parallel){
   registerDoFuture()
-  n_cores <- parallel::detectCores() - 2
+  n_cores <- 2
   plan(
     strategy = cluster,
     workers = parallel::makeCluster(n_cores)
