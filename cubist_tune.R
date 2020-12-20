@@ -40,7 +40,7 @@ max_rules <- c(1, 800)
 
 # Tuning settings ----
 
-grid_size <- 2
+grid_size <- 10
 
 # Load data ----
 
@@ -100,7 +100,7 @@ analysis_metric_set <- metric_set(rmse, rsq, mae)
 
 if(enable_parallel){
   registerDoFuture()
-  n_cores <- parallel::detectCores()
+  n_cores <- parallel::detectCores() - 2
   plan(
     strategy = cluster,
     workers = parallel::makeCluster(n_cores)
