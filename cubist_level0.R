@@ -1,6 +1,7 @@
 library(tidymodels)
 library(modeltime)
 library(modeltime.ensemble)
+library(rules)
 
 library(tidyverse)
 library(lubridate)
