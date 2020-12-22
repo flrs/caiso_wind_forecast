@@ -17,7 +17,7 @@ library(mlflow)
 
 # Set Run Config ----
 
-enable_parallel <- T
+enable_parallel <- F
 algo_desc <- "cubist_level0"
 dataset <- "comb_data_rev8.RDS"
 
