@@ -99,6 +99,8 @@ recipe_spec <- recipe(formula = Wind ~ .,
 features <- names(recipe_spec %>% prep() %>% juice())
 
 for(x in 1:nrow(model_parameters)){
+  if(x==2) next
+
   model_spec <- cubist_rules(
     mode = "regression",
     committees = !!(model_parameters %>% slice(x) %>% pull(committees)),
