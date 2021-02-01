@@ -4,12 +4,11 @@ subtitle: "How good is the model at predicting wind energy peaks?"
 author: Florian Roscheck
 date: 2021-01-24
 output:
-  html_notebook: default
-  github_document: default
-  toc: yes
-  highlight: tango
-  number_sections: yes
-  toc_float: yes
+  html_document:
+    toc_float: true
+    toc: true
+    number_sections: true
+    highlight: tango
 ---
 
 ```{r, setup, include=FALSE}
@@ -23,7 +22,7 @@ hours in which there is the most wind energy in the grid. It is worth noting tha
 initially trained that way. Instead, it forecasts time series of wind power from which we need to deduce the location
 of these windows.
 
-## About the Model
+# About the Model
 
 Before diving deep into model validation, let's clarify some details about the model. The model is a weighted ensemble
 model of 8 tree-based models. 2 of those models are based on [Cubist](https://cran.r-project.org/package=Cubist), a
@@ -40,7 +39,7 @@ hypercube experimental design.
 
 In summary, the modeling process was heavily constrained by performance considerations and available project time.
 
-## Loading Validation Data and Model
+# Loading Validation Data and Model
 
 When building the model, we withheld 20% of data from it so we can use it for validation. We purposely withheld the most
 recent data, as to not give away any future information of which the model would not know if we put it in production in
@@ -60,7 +59,7 @@ library(lubridate)
 ```
 ```{r}
 
-orig_data <- readRDS('../data/processed/comb_data_rev8.rds')
+orig_data <- readRDS('./data/processed/comb_data_rev8.rds')
 
 validation_samples <- round(nrow(orig_data)*0.2,0)
 print(paste('Number of validation samples: ', validation_samples))
@@ -80,7 +79,7 @@ model <- read_rds(paste('./models/', model_name, sep=''))
 ```
 
 
-## Creating a Validation Subset
+# Creating a Validation Subset
 
 As noted above, we want to only consider data for the next 26 hours. The fundamental reason for this is that we expect
 to always be able to create all feature data 26 hours in advance, for example from weather forecasts. Since our model
@@ -114,7 +113,7 @@ while(is_null(sample_nxs) | min(diff(sort(sample_nxs))) < forecast_period_sample
 
 sample_nxs
 ```
-## Assessing Model Performance: Single Sample
+# Assessing Model Performance: Single Sample
 
 Before analyzing model performance for all samples, let's do it for a single sample only. This gives us the space to
 think about performance metrics in detail without spending a lot of time on having the model run predictions for us.
@@ -130,7 +129,7 @@ prediction_window_samples
 ```
 Since our model forecasts in 5-min intervals, the 30-min window width is equal to 6 samples.
 
-### Extracting Actual Data
+## Extracting Actual Data
 
 Next, let's select an arbitrary 26-hour window and plot the actual, observed, amount of wind power in the California
 grid.
@@ -176,7 +175,7 @@ print(samples %>% select(Time) %>% slice(top_3_actual) %>% pull())
 
 print(top_3_actual_energy)
 ```
-### Making Predictions
+## Making Predictions
 
 Now, in accordance with our work above, let's use the model to predict the energy in the grid for the same time
 interval.
@@ -240,7 +239,7 @@ has been minimized. This may well be an inferior proxy for solving the peak iden
 Nevertheless, let's work with what we have and put the visual analysis we did above into formulas, so we can analyze the
 performance numerically.
 
-### Performance Metrics
+## Performance Metrics
 
 We would like to understand the performance of the model both with regards to the peak hours it selects as well with
 regards to the energy that it over- or underpredicts in those peak hours. Thus, we can analyze the performance of the
@@ -293,7 +292,7 @@ assumptions about the scale of the impact of features on the overall wind energy
 to correct for this flaw, for example training on more recent data or overweighting more recent samples in comparison
 to older samples. All of this tuning work is outside of the scope of this workbook.
 
-## Assessing Model Performance: Multiple Samples
+# Assessing Model Performance: Multiple Samples
 
 Now that we know how to assess a single sample, let's repeat the assessment for all 40 samples and multiple window
 widths.
@@ -304,7 +303,7 @@ prediction_window_width_hs <- c(0.5, 1.0, 1.5, 2.0, 3.0, 6.0, 12.0)
 ```
 The next cell runs for about 1.5 hrs and calculates the validation metrics developed above for all 40 samples.
 ```{r}
-if (!file.exists('../data/processed/prediction_stats.rds')) {
+if (!file.exists('./data/processed/prediction_stats.rds')) {
   prediction_stats <- tibble(
           window_width_h = numeric(),
           window_start = integer(),
@@ -377,20 +376,20 @@ if (!file.exists('../data/processed/prediction_stats.rds')) {
     progress_ct <- progress_ct + 1
   }
 
-  saveRDS(prediction_stats, '../data/processed/prediction_stats.rds')
+  saveRDS(prediction_stats, './data/processed/prediction_stats.rds')
 } else {
   print('File prediction_stats.rds already exists, so skipped the long-running assessment cell.')
 }
 ```
 Let's look at the validation metrics:
 ```{r}
-prediction_stats <- readRDS('../data/processed/prediction_stats.rds')
+prediction_stats <- readRDS('./data/processed/prediction_stats.rds')
 prediction_stats %>% head()
 ```
 We can now begin to slice and dice the validation metrics and get an idea of how good our model is at determining
 wind energy peaks in the California grid.
 
-## Peak Time Prediction Performance
+# Peak Time Prediction Performance
 
 ```{r}
 fig <- plot_ly(x = prediction_stats %>%
@@ -444,7 +443,7 @@ particular systematic weakness.
 
 Now, finally, let's look at the errors in terms of energy lost.
 
-## Peak Energy Prediction Performance
+# Peak Energy Prediction Performance
 
 The chart belows shows the relative energy error between predicted and actual peak by window width.
 ```{r}
@@ -494,7 +493,7 @@ fig
 The distribution resembles a beta distribution, with some outliers. Its peak is between -2.5% and -7.5%, an acceptable
 outcome.
 
-## Peak Time vs. Peak Energy Prediction
+# Peak Time vs. Peak Energy Prediction
 
 Now that we have looked at the peak time and the peak energy prediction performance separately, let's see if we can find
 any interesting pattern when we look at them together.
@@ -533,7 +532,7 @@ However, we need to be aware that this kind of conclusion may be biased by the s
 windows. In this context, it may be interesting to look at if the starting point of the validation window has an impact
 on the model performance.
 
-## Prediction Error by Validation Window Start Time
+# Prediction Error by Validation Window Start Time
 
 Let's evaluate whether the start time of the validation window has an influence on the peak energy prediction error.
 
@@ -581,7 +580,7 @@ that we randomly selected 2 atypical days for this bin. Now, the 23 hour bin als
 similarly odd performance like the 22 hour bin (see boxplot above). To conclude, we should assume that our algorithm
 may perform worse when a validation window starts after 10 pm.
 
-## Actual Peak Energy Prediction Performance
+# Actual Peak Energy Prediction Performance
 
 We have talked before about assessing the performance of the model for predicting the actual energy in the peak. Now,
 let us actually carry out that assessment.
@@ -618,7 +617,7 @@ such as mean absolute error, root mean squared error, and r squared, both for in
 evaluated. These metrics are not within the scope of this notebook, which takes a more domain-specific approach to
 evaluate the model's performance for the specific peak prediction problem.
 
-## Improving the Model
+# Improving the Model
 
 Based on the analysis above, we can now sketch out some ideas for improving the model.
 
@@ -630,6 +629,7 @@ We have seen that the model does not perform well on the validation dataset, sin
 wind energy included in the peaks of the energy time series. While training the model (outside of this notebook), we
 have note paid attention to how the model differs between predicting more recent vs. older data. In this context,
 several things could be worth investigating:
+
 - Plot residuals over time to confirm this is indeed an issue
 - Train the model with more recent data only
 - Superimpose a model that models the general trend
