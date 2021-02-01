@@ -73,7 +73,7 @@ experiment.
   - [ens_level1_f9e6c40.rds](./models/ens_level1_f9e6c40.rds) – Final, trained ensemble model (see [above](#about-the-model))
 - [notebooks](./notebooks) – Notebooks for experiments and analyses
   - [ext](./notebooks/ext) – Notebooks used in external environments, for example for large-scale training in the cloud
-  - [analyze_performance.rmd](./notebooks/analyze_performance.rmd) ([HTML](./notebooks/analyze_performance.html)) – Analysis of model performance
+  - [analyze_performance.rmd](./notebooks/analyze_performance.rmd) ([HTML](./notebooks/analyze_performance.html) | [view in browser](https://flrs.github.io/caiso_wind_forecast/)) – Analysis of model performance
 - [src](./src) – Source code for building models
   - [data](./src/data) – Source code for ETL process
   - [feature_engineering](./src/feature_engineering)
@@ -113,7 +113,7 @@ Cross-validation (CV) has not been performed for the ensemble model due to perfo
 ### Time Series Peak Forecasting Use Case
 
 Forecasting the peaks of the wind energy time series in the California grid is a specific use case of this model. 
-The [analyze_performance.rmd](./notebooks/analyze_performance.rmd) ([HTML](./notebooks/analyze_performance.html)) 
+The [analyze_performance.rmd](./notebooks/analyze_performance.rmd) ([HTML](./notebooks/analyze_performance.html) | [view in browser](https://flrs.github.io/caiso_wind_forecast/)) 
 notebook investigates this case in detail. In summary, the peaks predicted by the model, in 75% of all cases,
 do not miss the energy in the actual peaks within a 26-hour window by more than 14%.
 
