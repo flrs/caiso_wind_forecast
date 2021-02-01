@@ -7,6 +7,34 @@ This project is executed in [R](https://www.r-project.org/), using the
 [Modeltime](https://business-science.github.io/modeltime/) library for modeling, and [MLFlow](https://mlflow.org/) for 
 tracking experiments.
 
+## Repository Structure
+
+- [data](./data) – Data used or produced in the modeling process
+  - [raw](./data/raw) – Raw data (see [below](#about-the-data))
+  - [processed](./data/processed) – Processed data
+- [docs](./docs) – Documentation
+- [models](./models) – Trained models
+  -[ens_level1_f9e6c40.rds](./models/ens_level1_f9e6c40.rds) – Final, trained ensemble model (see [below](#model-overview))
+- [notebooks](./notebooks) – Notebooks for experiments and analyses
+  - [ext](./notebooks/ext) – Notebooks used in external environments, for example for large-scale training in the cloud
+  - [analyze_performance.rmd](./notebooks/analyze_performance.rmd) ([HTML](./notebooks/analyze_performance.nb.html)) – Analysis of model performance
+- [src](./src) – Source code for building models
+  - [data](./src/data) – Source code for ETL process
+  - [feature_engineering](./src/feature_engineering)
+  - [models_hyperparam_tuning](./src/models_hyperparam_tuning)
+  - [models_training](./src/models_training)
+  - [util](./src/util) – Utility code related to building models
+- [util](./util) – Utility tools
+  - [mlflow](./util/mlflow) – Data related to MLFlow
+    - [mlruns](./util/mlflow/mlruns) – MLFlow data directory
+    - [static](./util/mlflow/static) – Static export of tracked MLFlow experiments
+    - [Dockerfile](./util/mlflow/Dockerfile) – Dockerfile for running MLFlow server
+    - [environment.yml](./util/mlflow/environment.yml) – Conda environment file to create MLFlow environment
+
+## Model Overview
+
+![Model Architecture](./docs/model_architecture.svg)
+
 ## About the Data
 
 All data have been acquired and aggregated by the author from public sources. Three datasets are available to aid the 
@@ -29,10 +57,6 @@ forecasting effort:
   height adjusted estimates of the available wind energy. That information was fed through an assumed power curve and
   multiplied by the assumed total capacity available at that key location. That analysis is outside the scope of this 
   repository, but the generated features can be used for modelling.
-
-## Model Overview
-
-![Model Architecture](./docs/model_architecture.svg)
 
 ## The Problem in Detail
 
