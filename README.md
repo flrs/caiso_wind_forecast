@@ -20,7 +20,8 @@ forecasting effort:
   generation (wind, solar) in California. The author determined these locations based on geospatial analysis of 
   renewable energy assets in the state, an analysis that is outside the scope of this repository. Columns starting with
   `0_` through `4_` belong to wind-generating locations, ordered in descending order of generating capacity. This 
-  dataset can be used to create features for the model.
+  dataset can be used to create features for the model. Weather data have been acquired from 
+  [Dark Sky](https://darksky.net).
   
 - `db_pull_feature_gross_production_20201209.csv` - 1-hour time series dataset with domain-informed features at 10 key
   locations (see above). The author generated the wind-related features (`0_wind` through `4_wind`) by combining weather
@@ -33,5 +34,11 @@ forecasting effort:
 
 ![Model Architecture](./docs/model_architecture.svg)
 
+## The Problem in Detail
 
+26 hr horizon (Weather forecast)
+
+cubist https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwi-z97BosfuAhWSKDQIHU-tCTYQFjAPegQIAhAC&url=https%3A%2F%2Fmax-kuhn.squarespace.com%2Fs%2Fcubist_BRUG.pdf&usg=AOvVaw09sS1p66MFBGT49BdYpGzy
+
+## License
 
