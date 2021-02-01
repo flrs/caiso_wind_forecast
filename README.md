@@ -99,7 +99,7 @@ is clear that the Cubist models heavily overfit and the random forest models ove
 Cross-validation (CV) has not been performed for the ensemble model due to performance constraints.
 
 | Model Name               | CV, folds | mae (train) | rmse (train) | rsq (train) | mae (test) | rmse (test) | rsq (test) | ratio mae train/test |
-|--------------------------|-----------|-------------|--------------|-------------|------------|-------------|------------|----------------------|
+|--------------------------|:---------:|:-----------:|:------------:|:-----------:|:----------:|:-----------:|:----------:|:--------------------:|
 | ens_level1_f9e6c40       | ❌        |             |              |             | 469        | 599         | 0.779      |                      |
 | cubist_level0_b2caff6_1  | ✅ 4      | 15          | 32           | 0.999       | 493        | 634         | 0.686      | 0.03                 |
 | cubist_level0_b2caff6_3  | ✅ 4      | 20          | 39           | 0.999       | 507        | 656         | 0.670      | 0.04                 |
