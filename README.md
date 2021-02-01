@@ -87,6 +87,35 @@ experiment.
     - [Dockerfile](./util/mlflow/Dockerfile) – Dockerfile for running MLFlow server
     - [environment.yml](./util/mlflow/environment.yml) – Conda environment file to create MLFlow environment
   
+## Model Performance
+
+This section summarizes the model performance.
+
+### Time Series Forecasting Use Case
+
+The table below shows the performance of the algorithms at time series forecasting. Given the training and test set, it
+is clear that the Cubist models heavily overfit and the random forest models overfit to some extent as well.
+
+Cross-validation (CV) has not been performed for the ensemble model due to performance constraints.
+
+| Model Name               | CV, folds | mae (train) | rmse (train) | rsq (train) | mae (test) | rmse (test) | rsq (test) | ratio mae train/test |
+|--------------------------|-----------|-------------|--------------|-------------|------------|-------------|------------|----------------------|
+| ens_level1_f9e6c40       | ❌        |             |              |             | 469        | 599         | 0.779      |                      |
+| cubist_level0_b2caff6_1  | ✅ 4      | 15          | 32           | 0.999       | 493        | 634         | 0.686      | 0.03                 |
+| cubist_level0_b2caff6_3  | ✅ 4      | 20          | 39           | 0.999       | 507        | 656         | 0.670      | 0.04                 |
+| rf_level0_cc50409_1      | ✅ 4      | 219         | 300          | 0.943       | 439        | 559         | 0.755      | 0.50                 |
+| rf_level0_cc50409_2      | ✅ 4      | 231         | 315          | 0.937       | 440        | 560         | 0.753      | 0.53                 |
+| rf_level0_cc50409_3      | ✅ 4      | 37          | 57           | 0.998       | 444        | 567         | 0.751      | 0.08                 |
+| xgboost_level0_9dc6cbe_1 | ✅ 4      | 580         | 772          | 0.759       | 640        | 799         | 0.678      | 0.91                 |
+| xgboost_level0_9dc6cbe_2 | ✅ 4      | 519         | 689          | 0.803       | 598        | 752         | 0.706      | 0.87                 |
+| xgboost_level0_9dc6cbe_3 | ✅ 4      | 565         | 752          | 0.763       | 628        | 783         | 0.670      | 0.90                 |
+
+### Time Series Peak Forecasting Use Case
+
+Forecasting the peaks of the wind energy time series in the California grid is a specific use case of this model. 
+The [analyze_performance.rmd](./notebooks/analyze_performance.rmd) ([HTML](./notebooks/analyze_performance.html)) 
+notebook investigates this case in detail. In summary, the peaks predicted by the model, in 75% of all cases,
+do not miss the energy in the actual peaks within a 26-hour window by more than 14%.
 
 ## Contribution
 
@@ -98,7 +127,7 @@ I am happy about any contribution or feedback. Please let me know about your com
 This project is released under the [MIT License](./LICENSE).
 
 Please note that raw data as provided in 
-[`db_pull_production_data_raw_20201208.csv`](./data/raw/db_pull_production_data_raw_20201208.csv) has been generated
+[`db_pull_production_data_raw_20201208.csv`](./data/raw/db_pull_production_data_raw_20201208.csv) have been generated
 by the [California ISO](http://www.caiso.com).
 
 Please also note that weather data as provided in 
