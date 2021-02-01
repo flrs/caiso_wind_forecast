@@ -1,0 +1,4 @@
+artifact_location: ./mlruns/12
+experiment_id: '12'
+lifecycle_stage: active
+name: xgboost_level0

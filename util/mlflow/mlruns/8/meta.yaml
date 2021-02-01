@@ -1,0 +1,4 @@
+artifact_location: ./mlruns/8
+experiment_id: '8'
+lifecycle_stage: active
+name: rf_level0

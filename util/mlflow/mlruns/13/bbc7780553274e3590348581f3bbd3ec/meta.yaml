@@ -1,0 +1,15 @@
+artifact_uri: ./mlruns/13/bbc7780553274e3590348581f3bbd3ec/artifacts
+end_time: 1609105353544
+entry_point_name: ''
+experiment_id: '13'
+lifecycle_stage: active
+name: ''
+run_id: bbc7780553274e3590348581f3bbd3ec
+run_uuid: bbc7780553274e3590348581f3bbd3ec
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1609019958369
+status: 3
+tags: []
+user_id: unknown
