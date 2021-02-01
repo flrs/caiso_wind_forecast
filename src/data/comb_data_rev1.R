@@ -3,8 +3,8 @@ library(timetk)
 
 # Load data ----
 
-prod_data <- read_csv('../../data/db_pull_production_data_raw_20201208.csv')
-weather_data <- read_csv('../../data/db_pull_weather_data_raw_20201208.csv',
+prod_data <- read_csv('../../../../data/db_pull_production_data_raw_20201208.csv')
+weather_data <- read_csv('../../../../data/db_pull_weather_data_raw_20201208.csv',
                          col_types = "Tnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
                          skip_empty_rows = TRUE)
 
@@ -45,4 +45,4 @@ comb_data_padded <- comb_data %>%
               .by="5 min") %>%
   mutate_at(vars(`Wind`:`4_wind_speed_ms`), .funs= ts_impute_vec, period=1)
 
-saveRDS(comb_data_padded, "comb_data_rev1.rds")
+saveRDS(comb_data_padded, "../../data/processed/comb_data_rev1.rds")

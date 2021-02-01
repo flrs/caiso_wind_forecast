@@ -132,7 +132,7 @@ ensemble_fit <- models_tbl %>%
       ensemble_weighted(loadings = as.numeric(loadings))
 
 ensemble_fit %>%
-  write_rds(paste0(model_name, ".rds"))
+  write_rds(paste0(model_name, ".rds"),compress='bz')
 
 splits_validation <- time_series_split(
   comb_data,

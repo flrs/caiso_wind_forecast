@@ -235,13 +235,13 @@ mlflow_log_metric("mae_sd_cv", score_cvs_oos %>% slice(1) %>% pull(mae_sd),
                   run_id = mlflow_run_id,
                   client = tracker)
 
-png(file="feature_importances.png",
+png(file= "../../feature_importances.png",
     width=600, height=600)
 par(mar=c(4,10,2,2))
 barplot(workflow_fit$fit$fit$fit$variable.importance, horiz=1, las=1)
 dev.off()
 
-mlflow_log_artifact("feature_importances.png", 
+mlflow_log_artifact("../../feature_importances.png",
                     artifact_path = "",
                     run_id = mlflow_run_id,
                     client = tracker)

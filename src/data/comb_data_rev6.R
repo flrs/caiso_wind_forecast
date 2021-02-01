@@ -3,11 +3,11 @@ library(timetk)
 
 # Load data ----
 
-prod_data <- read_csv('../../data/db_pull_production_data_raw_20201208.csv')
-weather_data <- read_csv('../../data/db_pull_weather_data_raw_20201208.csv',
+prod_data <- read_csv('../../../../data/db_pull_production_data_raw_20201208.csv')
+weather_data <- read_csv('../../../../data/db_pull_weather_data_raw_20201208.csv',
                          col_types = "Tnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
                          skip_empty_rows = TRUE)
-feat_gross_prod_data <- read_csv('../../data/db_pull_feature_gross_production_20201209.csv')
+feat_gross_prod_data <- read_csv('../../../../data/db_pull_feature_gross_production_20201209.csv')
 
 # Clean data ----
 
@@ -62,6 +62,11 @@ comb_data %>%
                        Wind,
                        .ccf_vars = `1_wind`)
 
+comb_data %>%
+  plot_acf_diagnostics(Time,
+                       Wind,
+                       .ccf_vars = `Wind`)
+
 comb_data_padded <- comb_data %>%
   pad_by_time(.date_var = Time,
               .by="5 min") %>%
@@ -70,7 +75,19 @@ comb_data_padded <- comb_data %>%
 comb_data_padded <- comb_data_padded %>%
   tk_augment_lags(
     .value = matches("_wind|temp"),
-    .lags = c(1, 9, 276)) %>%
+    .lags = c(1, 2, 3, 4, 5, 9, 276)) %>%
+  tk_augment_lags(
+    matches("Wind"),
+    .lags = 300
+  ) %>%
+  tk_augment_holiday_signature(
+     .date_var = Time,
+     .locale_set      = "US",
+     .holiday_pattern = "none",
+     .exchange_set    = "none"
+  ) %>%
   drop_na()
 
-saveRDS(comb_data_padded, "comb_data_rev4.rds")
+comb_data_padded %>% glimpse()
+
+saveRDS(comb_data_padded, "../../data/processed/comb_data_rev6.rds")

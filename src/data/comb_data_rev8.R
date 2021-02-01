@@ -3,11 +3,11 @@ library(timetk)
 
 # Load data ----
 
-prod_data <- read_csv('../../data/db_pull_production_data_raw_20201208.csv')
-weather_data <- read_csv('../../data/db_pull_weather_data_raw_20201208.csv',
+prod_data <- read_csv('../../../../data/db_pull_production_data_raw_20201208.csv')
+weather_data <- read_csv('../../../../data/db_pull_weather_data_raw_20201208.csv',
                          col_types = "Tnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
                          skip_empty_rows = TRUE)
-feat_gross_prod_data <- read_csv('../../data/db_pull_feature_gross_production_20201209.csv')
+feat_gross_prod_data <- read_csv('../../../../data/db_pull_feature_gross_production_20201209.csv')
 
 # Clean data ----
 
@@ -73,6 +73,9 @@ comb_data_padded <- comb_data %>%
   mutate_at(vars(`Wind`:`4_wind`), .funs= ts_impute_vec, period=1)
 
 comb_data_padded <- comb_data_padded %>%
+  distinct(Time, .keep_all = TRUE)
+
+comb_data_padded <- comb_data_padded %>%
   tk_augment_lags(
     .value = matches("_wind|temp"),
     .lags = c(1, 2, 3, 4, 5, 9, 276)) %>%
@@ -92,4 +95,4 @@ comb_data_padded <- comb_data_padded %>%
 comb_data_padded <- comb_data_padded %>%
   select(matches("(Time)|(Wind)|(1_wind_speed_ms_lag5)|(1_wind_speed_ms_lag1)|(1_wind_speed_ms_lag3)|(1_wind_lag1)|(1_wind_speed_ms_lag4)|(1_wind)|(1_wind_lag4)|(1_wind_speed_ms_lag2)|(1_wind_lag2)|(1_wind_speed_ms)|(1_wind_lag3)|(1_wind_speed_ms_lag9)|(1_wind_lag9)|(1_wind_lag5)|(3_wind_lag5)|(3_wind_speed_ms_lag2)|(3_wind_speed_ms_lag5)|(3_wind_speed_ms_lag1)|(3_wind_speed_ms_lag4)|(3_wind_lag4)|(3_wind_lag9)|(3_wind_lag2)|(3_wind_lag3)|(3_wind_speed_ms)|(2_wind_lag9)|(3_wind_speed_ms_lag3)|(2_wind_lag2)|(2_wind_lag1)|(3_wind_lag1)|(3_wind)|(2_wind_speed_ms_lag2)|(2_wind_speed_ms_lag5)|(2_wind_lag5)|(3_wind_speed_ms_lag9)|(2_wind_lag3)|(2_wind_speed_ms)|(2_wind_speed_ms_lag3)|(2_wind_lag4)|(Wind_lag300)|(2_wind)|(2_wind_speed_ms_lag9)|(2_wind_speed_ms_lag4)|(4_wind_speed_ms_lag3)|(2_wind_speed_ms_lag1)|(4_wind_speed_ms_lag5)|(1_wind_speed_ms_lag276)|(1_wind_speed_ms_lag300)|(Time_week)|(1_wind_lag4_lag300)|(4_wind_lag9)|(4_wind_speed_ms)|(4_wind_speed_ms_lag2)|(2_wind_lag276)|(1_wind_speed_ms_lag1_lag300)|(4_wind_lag4)|(1_wind_speed_ms_lag4_lag300)|(1_wind_lag9_lag300)|(3_wind_speed_ms_lag5_lag300)|(1_wind_lag3_lag300)|(4_wind_lag2)|(2_wind_speed_ms_lag276)|(4_wind_lag1)|(0_wind_speed_ms_lag5)|(3_wind_lag2_lag300)|(4_wind)|(1_wind_speed_ms_lag5_lag300)|(4_wind_lag3)|(1_wind_speed_ms_lag2_lag300)|(4_wind_lag5)|(4_wind_speed_ms_lag4)|(4_wind_speed_ms_lag9)|(1_wind_lag2_lag300)|(1_wind_lag1_lag300)|(3_wind_speed_ms_lag276)|(2_wind_speed_ms_lag2_lag300)|(4_wind_speed_ms_lag1)|(1_wind_speed_ms_lag3_lag300)|(1_wind_speed_ms_lag9_lag300)|(Time_hour)|(1_wind_lag300)|(2_wind_lag300)|(Time_month)|(3_wind_speed_ms_lag300)|(2_wind_speed_ms_lag5_lag300)|(2_wind_lag1_lag300)|(0_wind_speed_ms_lag2)|(1_wind_lag5_lag300)|(1_wind_lag276)|(3_wind_lag4_lag300)|(3_wind_lag5_lag300)|(3_wind_lag3_lag300)|(3_wind_speed_ms_lag3_lag300)|(0_wind_speed_ms_lag1)|(3_wind_lag1_lag300)|(2_wind_lag9_lag300)|(3_wind_speed_ms_lag1_lag300)|(2_wind_speed_ms_lag1_lag300)|(0_temp_c_lag1)|(0_temp_c_lag9)|(2_wind_lag2_lag300)|(0_temp_c_lag3)|(0_temp_c)|(0_temp_c_lag5)|(2_wind_speed_ms_lag3_lag300)|(2_wind_lag3_lag300)|(Time_day)|(3_wind_speed_ms_lag2_lag300)|(8_temp_c_lag3)|(2_wind_speed_ms_lag4_lag300)|(8_temp_c)|(3_wind_lag276)|(8_temp_c_lag276)|(0_temp_c_lag2)|(1_temp_c)|(3_wind_speed_ms_lag4_lag300)|(0_temp_c_lag4)|(1_temp_c_lag5)|(4_wind_lag276_lag300)|(4_wind_speed_ms_lag276_lag300)|(0_wind_speed_ms_lag9)|(1_temp_c_lag4)|(8_temp_c_lag2)|(3_temp_c_lag276)|(8_temp_c_lag1)"
 ))
-saveRDS(comb_data_padded, "comb_data_rev7.rds")
+saveRDS(comb_data_padded, "../../data/processed/comb_data_rev8.rds")

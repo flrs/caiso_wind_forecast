@@ -3,11 +3,11 @@ library(timetk)
 
 # Load data ----
 
-prod_data <- read_csv('../../data/db_pull_production_data_raw_20201208.csv')
-weather_data <- read_csv('../../data/db_pull_weather_data_raw_20201208.csv',
+prod_data <- read_csv('../../../../data/db_pull_production_data_raw_20201208.csv')
+weather_data <- read_csv('../../../../data/db_pull_weather_data_raw_20201208.csv',
                          col_types = "Tnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
                          skip_empty_rows = TRUE)
-feat_gross_prod_data <- read_csv('../../data/db_pull_feature_gross_production_20201209.csv')
+feat_gross_prod_data <- read_csv('../../../../data/db_pull_feature_gross_production_20201209.csv')
 
 # Clean data ----
 
@@ -62,11 +62,6 @@ comb_data %>%
                        Wind,
                        .ccf_vars = `1_wind`)
 
-comb_data %>%
-  plot_acf_diagnostics(Time,
-                       Wind,
-                       .ccf_vars = `Wind`)
-
 comb_data_padded <- comb_data %>%
   pad_by_time(.date_var = Time,
               .by="5 min") %>%
@@ -75,19 +70,11 @@ comb_data_padded <- comb_data %>%
 comb_data_padded <- comb_data_padded %>%
   tk_augment_lags(
     .value = matches("_wind|temp"),
-    .lags = c(1, 2, 3, 4, 5, 9, 276)) %>%
-  tk_augment_lags(
-    matches("Wind"),
-    .lags = 300
-  ) %>%
-  tk_augment_holiday_signature(
-     .date_var = Time,
-     .locale_set      = "US",
-     .holiday_pattern = "none",
-     .exchange_set    = "none"
-  ) %>%
+    .lags = c(1, 9, 276)) %>%
   drop_na()
 
-comb_data_padded %>% glimpse()
+comb_data_padded <- comb_data_padded %>%
+  select(matches("(Time)|(Wind)|(1_wind_speed_ms_lag9)|(1_wind_lag9)|(1_wind_lag1)|(1_wind_speed_ms)|(1_wind_speed_ms_lag1)|(1_wind)|(3_wind_speed_ms_lag9)|(3_wind_speed_ms_lag1)|(3_wind_speed_ms)|(3_wind_lag9)|(2_wind)|(2_wind_lag9)|(2_wind_speed_ms)|(3_wind_lag1)|(2_wind_speed_ms_lag9)|(3_wind)|(2_wind_speed_ms_lag1)|(2_wind_lag1)|(Time_week)|(4_wind_lag9)|(4_wind_speed_ms_lag9)|(1_wind_speed_ms_lag276)|(4_wind_speed_ms_lag1)|(1_wind_lag276)|(Time_hour)|(2_wind_lag276)|(4_wind_speed_ms)|(Time_month)|(3_wind_lag276)|(2_wind_speed_ms_lag276)|(3_wind_speed_ms_lag276)|(4_wind_lag1)|(Time_quarter)|(4_wind)"
+))
 
-saveRDS(comb_data_padded, "comb_data_rev6.rds")
+saveRDS(comb_data_padded, "../../data/processed/comb_data_rev5.rds")

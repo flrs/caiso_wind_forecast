@@ -3,8 +3,8 @@ library(timetk)
 
 # Load data ----
 
-prod_data <- read_csv('../../data/db_pull_production_data_raw_20201208.csv')
-weather_data <- read_csv('../../data/db_pull_weather_data_raw_20201208.csv',
+prod_data <- read_csv('../../../../data/db_pull_production_data_raw_20201208.csv')
+weather_data <- read_csv('../../../../data/db_pull_weather_data_raw_20201208.csv',
                          col_types = "Tnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
                          skip_empty_rows = TRUE)
 
@@ -31,18 +31,15 @@ weather_data_padded <- weather_data %>%
 comb_data <- prod_data %>%
   select(matches("(Time)|(Wind)")) %>%
   left_join(weather_data_padded, by = c("Time" = "Time")) %>%
-  select(matches("(Time)|(Wind)|wind|temp"))
+  select(matches("(Time)|(Wind)|wind"))
 
 comb_data <- comb_data %>%
   drop_na() %>%
   arrange('Time')
 
-comb_data <- comb_data %>%
-  mutate(across(matches("_ms"), function(x) x**3))
-
 comb_data_padded <- comb_data %>%
   pad_by_time(.date_var = Time,
               .by="5 min") %>%
-  mutate_at(vars(`Wind`:`9_temp_c`), .funs= ts_impute_vec, period=1)
+  mutate_at(vars(`Wind`:`4_wind_speed_ms`), .funs= ts_impute_vec, period=1)
 
-saveRDS(comb_data_padded, "comb_data_rev2.rds")
+saveRDS(comb_data_padded, "../../data/processed/comb_data_rev0.rds")
