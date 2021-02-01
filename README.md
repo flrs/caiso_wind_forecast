@@ -66,11 +66,11 @@ experiment.
 ### Repository Structure
 
 - [data](./data) – Data used or produced in the modeling process
-  - [raw](./data/raw) – Raw data (see [below](#about-the-data))
+  - [raw](./data/raw) – Raw data (see [above](#about-the-data))
   - [processed](./data/processed) – Processed data
 - [docs](./docs) – Documentation
 - [models](./models) – Trained models
-  - [ens_level1_f9e6c40.rds](./models/ens_level1_f9e6c40.rds) – Final, trained ensemble model (see [below](#model-overview))
+  - [ens_level1_f9e6c40.rds](./models/ens_level1_f9e6c40.rds) – Final, trained ensemble model (see [above](#about-the-model))
 - [notebooks](./notebooks) – Notebooks for experiments and analyses
   - [ext](./notebooks/ext) – Notebooks used in external environments, for example for large-scale training in the cloud
   - [analyze_performance.rmd](./notebooks/analyze_performance.rmd) ([HTML](./notebooks/analyze_performance.html)) – Analysis of model performance
@@ -89,11 +89,11 @@ experiment.
   
 ## Model Performance
 
-This section summarizes the model performance.
+This section summarizes model performance by use case.
 
 ### Time Series Forecasting Use Case
 
-The table below shows the performance of the algorithms at time series forecasting. Given the training and test set, it
+The table below shows the performance of the models at time series forecasting. Given the training and test set, it
 is clear that the Cubist models heavily overfit and the random forest models overfit to some extent as well.
 
 Cross-validation (CV) has not been performed for the ensemble model due to performance constraints.
