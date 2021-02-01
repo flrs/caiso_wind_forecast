@@ -2,3 +2,11 @@
 .Rhistory
 .RData
 .Ruserdata
+/models/cubist_level0_b2caff6_1.rds
+/models/cubist_level0_b2caff6_3.rds
+/models/rf_level0_cc50409_1.rds
+/models/rf_level0_cc50409_2.rds
+/models/rf_level0_cc50409_3.rds
+/models/xgboost_level0_9dc6cbe_1.rds
+/models/xgboost_level0_9dc6cbe_2.rds
+/models/xgboost_level0_9dc6cbe_3.rds
