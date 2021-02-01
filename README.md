@@ -29,4 +29,9 @@ forecasting effort:
   multiplied by the assumed total capacity available at that key location. That analysis is outside the scope of this 
   repository, but the generated features can be used for modelling.
 
+## Model Overview
+
+![Model Architecture](./docs/model_architecture.svg)
+
+
 
