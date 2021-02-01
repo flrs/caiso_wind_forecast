@@ -1,0 +1,646 @@
+---
+title: "Analyzing Model Performance"
+subtitle: "How good is the model at predicting wind energy peaks?"
+author: Florian Roscheck
+date: 2021-01-24
+output:
+  html_notebook: default
+  github_document: default
+  toc: yes
+  highlight: tango
+  number_sections: yes
+  toc_float: yes
+---
+
+```{r, setup, include=FALSE}
+knitr::opts_knit$set(root.dir = '../')
+```
+In this notebook, we analyze the performance of the machine learning model that forecasts the amount of wind power in
+the California energy grid.
+
+The use case we are interested in in this workbook is to find the time window of a specified width within the next 26
+hours in which there is the most wind energy in the grid. It is worth noting that the machine learning model was not
+initially trained that way. Instead, it forecasts time series of wind power from which we need to deduce the location
+of these windows.
+
+## About the Model
+
+Before diving deep into model validation, let's clarify some details about the model. The model is a weighted ensemble
+model of 8 tree-based models. 2 of those models are based on [Cubist](https://cran.r-project.org/package=Cubist), a
+boosted regression model. 3 models are based on XGBoost and another 3 models are random forest models. These types of
+models have been chosen according to their ability to incorporate a set of 188 features and good training performance
+in R.
+
+Each model has been trained on about 143k data points. The model parameters have been selected after hyperparameter
+tuning, subject to 4-fold time series cross-validation. The number of folds was constrained by training performance.
+
+A weighted average was chosen for ensembling the models due to performance constraints over potentially more accurate
+methods like stacking. The weights were chosen after assessing 20 different weight combinations through a latin
+hypercube experimental design.
+
+In summary, the modeling process was heavily constrained by performance considerations and available project time.
+
+## Loading Validation Data and Model
+
+When building the model, we withheld 20% of data from it so we can use it for validation. We purposely withheld the most
+recent data, as to not give away any future information of which the model would not know if we put it in production in
+a real-time scenario. We now use these most recent data to validate the model.
+
+Let's load the required libraries and the data!
+```{r}
+library(tidymodels)
+options(tidymodels.dark = TRUE)
+library(zoo)
+library(tidyverse)
+library(modeltime)
+library(modeltime.ensemble)
+library(timetk)
+library(plotly)
+library(lubridate)
+```
+```{r}
+
+orig_data <- readRDS('../data/processed/comb_data_rev8.rds')
+
+validation_samples <- round(nrow(orig_data)*0.2,0)
+print(paste('Number of validation samples: ', validation_samples))
+```
+Now, let's extract the validation set!
+```{r}
+data <- orig_data %>%
+  tail(validation_samples)
+
+head(data)
+```
+Finally, let's load the model!
+```{r}
+model_name <- 'ens_level1_f9e6c40.rds'
+
+model <- read_rds(paste('./models/', model_name, sep=''))
+```
+
+
+## Creating a Validation Subset
+
+As noted above, we want to only consider data for the next 26 hours. The fundamental reason for this is that we expect
+to always be able to create all feature data 26 hours in advance, for example from weather forecasts. Since our model
+forecasts 5-min data, we need to convert 26 hours into the appropriate number of samples.
+```{r}
+forecast_period_samples <- 26*60/5
+forecast_period_samples
+```
+If we had a lot of resources, we could evaluate the model performance for every window of the above length in the
+validation dataset. Unfortunately, our model is quite slow for making predictions. So, we need to find a way to extract
+a subset of the validation set that is representative and for which predictions do not take too long.
+
+After some experimentation (outside of this notebook) it became clear that predicting 40 26-hour timeframes can be done
+within 1.5 hours, an appropriate timeframe for this analysis.
+
+In the next cell, we continuously draw 40 start times for the validation subset. We stop drawing when the 26-hour time
+frames following the start times do not overlap. This allows us to have all samples be reasonable independent.
+
+A weakness of this approach is that we may unintentionally oversample and undersample certain scenarios. For example, we
+may bias our validation towards certain months of the year, between which wind usually may differ.
+```{r}
+n_samples <- 40
+
+# Draw until non-overlapping samples
+set.seed(42)
+
+sample_nxs <- NULL
+while(is_null(sample_nxs) | min(diff(sort(sample_nxs))) < forecast_period_samples){
+    sample_nxs <- sample(nrow(data), n_samples, replace=F)
+}
+
+sample_nxs
+```
+## Assessing Model Performance: Single Sample
+
+Before analyzing model performance for all samples, let's do it for a single sample only. This gives us the space to
+think about performance metrics in detail without spending a lot of time on having the model run predictions for us.
+
+First, we need to determine the width of the prediction window. Reminder: This is the width of the window with the most
+wind energy in the grid within the 26-hour time frame. Let's assume we wanted to find the 30-min window with the most
+wind energy within the 26-hour time frame.
+```{r}
+prediction_window_width_h <- 0.5
+
+prediction_window_samples <- prediction_window_width_h*12
+prediction_window_samples
+```
+Since our model forecasts in 5-min intervals, the 30-min window width is equal to 6 samples.
+
+### Extracting Actual Data
+
+Next, let's select an arbitrary 26-hour window and plot the actual, observed, amount of wind power in the California
+grid.
+```{r}
+samples <- data %>% slice(1160:eval(1160+forecast_period_samples))
+
+samples %>% plot_time_series(Time,
+                             Wind,
+                             .smooth = F,
+                             .title = 'Actual Wind Power in California Grid',
+                             .y_lab = 'Power in MW')
+```
+Within this window, we now need to find the 30-min period that includes the most energy. First, let's calculate the
+rolling sum over 30-min periods.
+```{r}
+
+windows <- samples %>% select(Wind) %>% rollsum(prediction_window_samples)
+
+samples_with_windows <- samples %>%
+        add_column(sum_window=windows %>% append(rep(NaN,tail(nrow(samples)-nrow(windows)))))
+
+samples_with_windows %>%
+        pivot_longer(cols=c(Wind, sum_window)) %>%
+        plot_time_series(Time,
+                         value,
+                         .color_var = name,
+                         .smooth = F,
+                         .title = '30-min Rolling Window of Actual Wind Power in California Grid',
+        .y_lab = 'Power in MW/Energy in MW(5min)')
+```
+Now, let's calculate the top 3 windows with the most wind energy in the grid. We use the top 3 because this helps us get
+a clearer picture of the models' performance down the line, in contrast to just comparing to a single actual value
+alone.
+
+For every window, we calculate the starting point and the amount of energy included. Since we want to calculate energy
+in MWh, we need to divide the 5-min actual generation by 12.
+```{r}
+top_3_actual <- order(windows, decreasing = T) %>% head(3)
+top_3_actual_energy <- windows[top_3_actual] / 12
+
+print(top_3_actual)
+print(samples %>% select(Time) %>% slice(top_3_actual) %>% pull())
+
+print(top_3_actual_energy)
+```
+### Making Predictions
+
+Now, in accordance with our work above, let's use the model to predict the energy in the grid for the same time
+interval.
+
+```{r}
+predictions <- modeltime_table(model) %>%
+  modeltime_forecast(
+    new_data = samples,
+    actual_data = samples
+  )
+```
+Let's calculate the predictions and their rolling windows and plot them alongside the actual data.
+```{r}
+samples_predicted <- predictions %>%
+  filter(.key=='prediction') %>%
+  select(.value) %>%
+  pull()
+
+windows_predicted <- samples_predicted %>% rollsum(prediction_window_samples)
+
+samples_with_windows_predicted <- samples_with_windows %>%
+        add_column(sum_window_predicted=
+                           windows_predicted %>%
+                           append(rep(NaN,tail(nrow(samples)-length(windows_predicted))))
+        ) %>%
+        add_column(
+                Wind_predicted=samples_predicted
+        )
+
+samples_with_windows_predicted %>%
+        pivot_longer(cols=c(Wind, sum_window, Wind_predicted, sum_window_predicted)) %>%
+        plot_time_series(Time,
+                         value,
+                         .color_var = name,
+                         .smooth = F,
+                         .title = '30-min Rolling Window of Actual Wind Power in California Grid',
+        .y_lab = 'Power in MW/Energy in MW(5min)')
+```
+For this particular sample, the model matches the trough in the daytime hours quite well, but it performs less pleasing
+in the night from June 30 to July 1. In the early morning hours of June 30, the model's prediction stays below the
+actual value. Looking at the rolling sums, this underprediction leads in the predicted peak not being in the early
+hours of June 30, but in the late afternoon that day. In this case, the model captures the wrong peak.
+
+Let's find the top 3 predicted window positions as well as the energy they contain.
+
+```{r}
+top_3_predicted <- order(windows_predicted, decreasing = T) %>% head(3)
+top_3_predicted_energy <- windows_predicted[top_3_predicted] / 12
+actual_energy_top_3_predicted <- windows[top_3_predicted] / 12
+
+print(top_3_predicted)
+print(samples %>% select(Time) %>% slice(top_3_predicted) %>% pull())
+
+print(top_3_predicted_energy)
+
+print(actual_energy_top_3_predicted)
+```
+This particular example already exposes a flaw of the model: The relative size of the peaks to each other is of concern
+in the domain application at hand. During training of the model, the mean absolute error between model and actual data
+has been minimized. This may well be an inferior proxy for solving the peak identification problem we are facing here.
+Nevertheless, let's work with what we have and put the visual analysis we did above into formulas, so we can analyze the
+performance numerically.
+
+### Performance Metrics
+
+We would like to understand the performance of the model both with regards to the peak hours it selects as well with
+regards to the energy that it over- or underpredicts in those peak hours. Thus, we can analyze the performance of the
+model in several ways:
+
+- By how much time did the model miss the actual peak?
+  - In terms of hours
+  - Relative to the window width (e.g. 30 min in scenario above)
+- By how much energy (absolute and relative) did the model miss the actual peak?
+  - In terms of actual energy
+  - In terms of predicted energy
+
+Let's put these thoughts into code. For all `_h` variables, positive numbers mean that the predicted peak is after the
+actual peak, and vice-versa. Similarly, for all `_MWh` variables, a positive value means that the model overpredicts
+the actual value, and vice-versa.
+```{r}
+prediction_error_h <- (top_3_predicted-top_3_actual)/12
+prediction_error_h_relative <- prediction_error_h/prediction_window_width_h
+
+prediction_error_MWh <- (top_3_predicted_energy-top_3_actual_energy)/12
+prediction_error_MWh_relative <- prediction_error_MWh/(top_3_actual_energy/12)
+
+prediction_error_MWh_actual_energy <- (actual_energy_top_3_predicted-top_3_actual_energy) / 12
+prediction_error_MWh_relative_actual_energy <- prediction_error_MWh_actual_energy / (top_3_actual_energy / 12)
+
+print('prediction_error_h')
+print(round(prediction_error_h,2))
+print('prediction_error_h_relative [%]')
+print(round(prediction_error_h_relative*100.0,2))
+print('prediction_error_MWh')
+print(round(prediction_error_MWh,2))
+print('prediction_error_MWh_relative [%]')
+print(round(prediction_error_MWh_relative*100.0,2))
+print('prediction_error_MWh_actual_energy')
+print(round(prediction_error_MWh_actual_energy,2))
+print('prediction_error_MWh_relative_actual_energy [%]')
+print(round(prediction_error_MWh_relative_actual_energy*100.0,2))
+```
+The metrics above capture what we have already understood from the chart above. Our predicted peak is about 15 1/2 hours
+after the actual peak (see `prediction_error_h`). As `prediction_error_MWh_relative_actual_energy` shows, assuming our
+peak is where it was predicted, we miss out on the energy contained in the actual peak by about 10%.
+
+As `prediction_error_MWh_relative` shows, the model underpredicts the actual energy in the peak, even when set at
+the model's chosen peak location. This also backs what we see in the plot above - at least for the inspected sample,
+the model tends to underpredict the actual wind power in the grid. One may ask the question why that is the case.
+
+As noted, the model was only trained on past data and the validation data is the most recent data. It is conceivable
+that in the most recent period, more wind capacity has been added to the grid, thus invalidating some of the model's
+assumptions about the scale of the impact of features on the overall wind energy amount. There are several techniques
+to correct for this flaw, for example training on more recent data or overweighting more recent samples in comparison
+to older samples. All of this tuning work is outside of the scope of this workbook.
+
+## Assessing Model Performance: Multiple Samples
+
+Now that we know how to assess a single sample, let's repeat the assessment for all 40 samples and multiple window
+widths.
+
+We choose the following window widths:
+```{r}
+prediction_window_width_hs <- c(0.5, 1.0, 1.5, 2.0, 3.0, 6.0, 12.0)
+```
+The next cell runs for about 1.5 hrs and calculates the validation metrics developed above for all 40 samples.
+```{r}
+if (!file.exists('../data/processed/prediction_stats.rds')) {
+  prediction_stats <- tibble(
+          window_width_h = numeric(),
+          window_start = integer(),
+          choice_rank = integer(),
+          time_predicted = as.POSIXct(NA),
+          error_h = numeric(),
+          error_h_relative = numeric(),
+          error_MWh = numeric(),
+          error_MWh_relative = numeric(),
+          error_MWh_actual_energy = numeric(),
+          error_MWh_relative_actual_energy = numeric()
+  )
+
+  progress_ct <- 0
+  print('Starting calculation...')
+  for (sample_nx in sample_nxs) {
+    samples <- data %>% slice(eval(sample_nx):eval(sample_nx + forecast_period_samples))
+    predictions <- modeltime_table(model) %>%
+            modeltime_forecast(
+                    new_data = data %>% slice(eval(sample_nx):eval(sample_nx + forecast_period_samples)),
+                    actual_data = data %>% slice(eval(sample_nx):eval(sample_nx + forecast_period_samples))
+            )
+
+    for (prediction_window_width_h in prediction_window_width_hs) {
+      prediction_window_samples <- prediction_window_width_h * 12
+
+      windows <- samples %>%
+              select(Wind) %>%
+              rollsum(prediction_window_samples)
+      top_3_actual <- order(windows, decreasing = T) %>% head(3)
+      top_3_actual_energy <- windows[top_3_actual]
+
+      samples_predicted <- predictions %>%
+              filter(.key == 'prediction') %>%
+              select(.value)
+
+      windows_predicted <- samples_predicted %>% rollsum(prediction_window_samples)
+      top_3_predicted <- order(windows_predicted, decreasing = T) %>% head(3)
+      top_3_predicted_energy <- windows_predicted[top_3_predicted]
+      actual_energy_top_3_predicted <- windows[top_3_predicted]
+
+      prediction_error_h <- (top_3_predicted - top_3_actual) * 5 / 60
+      prediction_error_h_relative <- prediction_error_h / prediction_window_width_h
+
+      prediction_error_MWh <- (top_3_predicted_energy - top_3_actual_energy) / 12
+      prediction_error_MWh_relative <- prediction_error_MWh / (top_3_actual_energy / 12)
+      prediction_error_MWh_actual_energy <- (actual_energy_top_3_predicted - top_3_actual_energy) / 12
+      prediction_error_MWh_relative_actual_energy <- prediction_error_MWh_actual_energy / (top_3_actual_energy / 12)
+
+      prediction_stats <- prediction_stats %>%
+              add_row(
+                      window_width_h = rep(prediction_window_width_h, 3),
+                      window_start = rep(sample_nx, 3),
+                      choice_rank = c(1, 2, 3),
+                      time_predicted = data %>%
+                              slice(sample_nx + top_3_predicted) %>%
+                              select(Time) %>%
+                              pull(),
+                      error_h = prediction_error_h,
+                      error_h_relative = prediction_error_h_relative,
+                      error_MWh = prediction_error_MWh,
+                      error_MWh_relative = prediction_error_MWh_relative,
+                      error_MWh_actual_energy = prediction_error_MWh_actual_energy,
+                      error_MWh_relative_actual_energy = prediction_error_MWh_relative_actual_energy
+              )
+
+    }
+
+    print(paste(progress_ct, '/', length(sample_nxs)))
+    progress_ct <- progress_ct + 1
+  }
+
+  saveRDS(prediction_stats, '../data/processed/prediction_stats.rds')
+} else {
+  print('File prediction_stats.rds already exists, so skipped the long-running assessment cell.')
+}
+```
+Let's look at the validation metrics:
+```{r}
+prediction_stats <- readRDS('../data/processed/prediction_stats.rds')
+prediction_stats %>% head()
+```
+We can now begin to slice and dice the validation metrics and get an idea of how good our model is at determining
+wind energy peaks in the California grid.
+
+## Peak Time Prediction Performance
+
+```{r}
+fig <- plot_ly(x = prediction_stats %>%
+        filter(choice_rank == 1) %>%
+        select(window_width_h) %>%
+        pull(),
+               y = prediction_stats %>%
+                       filter(choice_rank == 1) %>%
+                       select(error_h) %>%
+                       pull(),
+               type = 'box')
+fig <- fig %>%
+        layout(title = 'Peak Time Prediction Error by Window Width',
+               xaxis = list(title = 'Peak Window Width in h'),
+               yaxis = list(title = 'Prediction Error in Hours'))
+fig
+```
+The good news first: For all windows, the median error is close to zero which means that the model does not
+systematically over- or underpredict the location of the peak. Furthermore, about 50% of all sampled predictions are
+between -2.5 hours (predicted peak too early) and 1.3 hours (predicted peak too late) for window widths < 6, and smaller
+for greater window widths. This does not look too bad (but also not too good) for a 26-hour assessment window. To find
+out how good (or bad) these numbers really are, they need to be put in context with the energy that we are missing out
+on, more on that below.
+
+Now to the not-so-good news: There are many outliers. It looks as if some predictions are straightout off. In fact, 50%
+of sampled predictions are outside the bounds specified above, an interval of 3.8 hours. While 3.8 hours does not seem
+like a particularly small and precise interval, having 50% of samples outside of this range is definitely not great. But
+there is the chance that we may just be finding another big peak, so we need to look better at what the impact on the
+lost energy is.
+
+Before moving on, let's look at an actual histogram of the data and to get a better picture of the distribution outside
+of the boxplot above. We arbitrarily choose the 1-hr timeframe.
+
+```{r}
+fig <- plot_ly(x = prediction_stats %>%
+        filter(choice_rank == 1, window_width_h == 1.0) %>%
+        select(error_h) %>%
+        pull(),
+               type = 'histogram',
+               nbinsx = 20)
+fig <- fig %>%
+        layout(title = 'Peak Time Prediction Error Histogram for 1-hr Window',
+               xaxis = list(title = 'Peak Time Prediction Error in h'),
+               yaxis = list(title = 'Count'))
+fig
+```
+The histogram of the peak time prediction error revels a detail that the box plot omits: The prediction error
+distribution does not have a normal shape, but has a relatively high peak around zero, with outliers spread
+out around. This amplifies the notion that our model is mostly right (within 4 hours) and outliers do not reflect any
+particular systematic weakness.
+
+Now, finally, let's look at the errors in terms of energy lost.
+
+## Peak Energy Prediction Performance
+
+The chart belows shows the relative energy error between predicted and actual peak by window width.
+```{r}
+fig <- plot_ly(x = prediction_stats %>%
+        filter(choice_rank == 1) %>%
+        select(window_width_h) %>%
+        pull(),
+               y = prediction_stats %>%
+                       filter(choice_rank == 1) %>%
+                       select(error_MWh_relative_actual_energy) %>%
+                       pull(),
+               type = 'box')
+fig <- fig %>%
+        layout(title = 'Relative Energy Error Between Predicted and Actual Peak by Window Width',
+               width = 800,
+               xaxis = list(title = 'Peak Window Width in h'),
+               yaxis = list(title = 'Relative Energy Error Between Predicted and Actual Peak', tickformat = '%'))
+fig
+```
+The first thing jumping out when looking at the chart is that the relative energy error is never greater than 0%. This
+is a logical consequence of what we are assessing though: By definition, energy in the window our model predicts the
+peak is in in the actual data cannot be larger than the actual peak in the actual data.
+
+The median of all prediction errors is always at least -8%, a number that, overall does not seem too low.
+In practice, this means that about 50% of all predictions do not miss more than 8% of the energy contained in the actual
+peak. In accordance with the 75% percentile, 75% of all predictions do not miss the energy in the peak by more than 14%.
+
+Another reassuring (although logical) trend is that the greater the peak window width gets, the smaller the prediction
+error gets.
+
+For completeness, once again, let's plot a histogram shining a light on the distribution. We pick the 1-hr peak window
+width for consistency with the histogram above.
+
+```{r}
+fig <- plot_ly(x = prediction_stats %>%
+        filter(choice_rank == 1, window_width_h == 1.0) %>%
+        select(error_MWh_relative_actual_energy) %>%
+        pull(),
+               type = 'histogram',
+               nbinsx = 20)
+fig <- fig %>%
+        layout(title = 'Peak Relative Energy Error Histogram for 1-hr Window',
+               xaxis = list(title = 'Peak Relative Energy Error', tickformat = '%'),
+               yaxis = list(title = 'Count'))
+fig
+```
+The distribution resembles a beta distribution, with some outliers. Its peak is between -2.5% and -7.5%, an acceptable
+outcome.
+
+## Peak Time vs. Peak Energy Prediction
+
+Now that we have looked at the peak time and the peak energy prediction performance separately, let's see if we can find
+any interesting pattern when we look at them together.
+
+```{r}
+fig <- plot_ly(x = prediction_stats %>%
+        filter(choice_rank == 1) %>%
+        select(error_h) %>%
+        pull(),
+               y = prediction_stats %>%
+                       filter(choice_rank == 1) %>%
+                       select(error_MWh_relative_actual_energy) %>%
+                       pull(),
+               marker = list(color = prediction_stats %>%
+                       filter(choice_rank == 1) %>%
+                       select(window_width_h) %>%
+                       pull(),
+                             colorscale = 'Bluered',
+                             colorbar = list(
+                                     title = 'Window width in h'
+                             )),
+               mode = 'markers',
+               type = 'scatter')
+fig <- fig %>%
+        layout(title = 'Peak Time Error vs. Relative Energy Error',
+               xaxis = list(title = 'Peak Time Prediction Error in h'),
+               yaxis = list(title = 'Relative Energy Error Between Predicted and Actual Peak', tickformat = '%'))
+fig
+```
+It looks like there are quite a few outliers for early predicted peaks. Very few of those miss the energy contained in
+the actual peak by more than 30%. For peaks that are predicted too late, more than half of the outliers miss the energy
+contained in the actual peak by more than 30%. So, given the 40 validation samples, when our model predicts the peak
+too late, there is a greater chance we miss the peak energy by a lot.
+
+However, we need to be aware that this kind of conclusion may be biased by the starting points of the 26-hour validation
+windows. In this context, it may be interesting to look at if the starting point of the validation window has an impact
+on the model performance.
+
+## Prediction Error by Validation Window Start Time
+
+Let's evaluate whether the start time of the validation window has an influence on the peak energy prediction error.
+
+```{r}
+start_hours <- data %>%
+        slice(prediction_stats %>%
+                      filter(choice_rank == 1) %>%
+                      select(window_start) %>%
+                      pull()) %>%
+        select(Time) %>%
+        pull() %>%
+        hour()
+
+fig <- plot_ly(x = start_hours,
+               y = prediction_stats %>%
+                       filter(choice_rank == 1) %>%
+                       select(error_MWh_relative_actual_energy) %>%
+                       pull(),
+               type = 'box')
+fig <- fig %>%
+        layout(title = 'Relative Energy Error vs. Validation Window Start Time',
+               xaxis = list(title = 'Validation Window Start Time (Hour of Day)'),
+               yaxis = list(title = 'Relative Energy Error Between Predicted and Actual Peak', tickformat = '%'))
+fig
+```
+The plot shows that for start times after midnight through 10 pm, there is no clear pattern. For start times after 10 pm
+however, the error increases visibly. To be sure that this is not just a phenomena resulting from a small sample
+size, let's plot the sample sizes for each bin.
+
+```{r}
+fig <- plot_ly(x = start_hours,
+               type = 'histogram',
+               nbinsx = 24)
+fig <- fig %>%
+        layout(title = 'Sample Sizes for Relative Energy Error vs. Validation Window Start Time Plot',
+               xaxis = list(title = 'Validation Window Start Time (Hour of Day)'),
+               yaxis = list(title = 'Count'),
+               width = 800)
+fig
+```
+
+Particularly for the 22 hour bin, there is a similar amount of samples as we find in the other bins. Fundamentally
+however, the 22 hour bins only contains 14 samples, which means 2 distinct starting points. Thus, there may be a chance
+that we randomly selected 2 atypical days for this bin. Now, the 23 hour bin also just has a single sample and shows
+similarly odd performance like the 22 hour bin (see boxplot above). To conclude, we should assume that our algorithm
+may perform worse when a validation window starts after 10 pm.
+
+## Actual Peak Energy Prediction Performance
+
+We have talked before about assessing the performance of the model for predicting the actual energy in the peak. Now,
+let us actually carry out that assessment.
+
+What we want to know is: Given the suggested peak time of the model, by how many MWh does that model's peak energy #
+prediction differ from the MWh in the peak in the actual data? As always, let's plot and investigate!
+
+```{r}
+fig <- plot_ly(
+        x = prediction_stats %>%
+                filter(choice_rank == 1) %>%
+                select(window_width_h) %>%
+                pull(),
+        y = prediction_stats %>%
+                filter(choice_rank == 1) %>%
+                select(error_MWh) %>%
+                pull(),
+        type = 'box')
+fig <- fig %>%
+        layout(title = 'Absolute Energy Error Between Predicted and Actual Peak',
+               xaxis = list(title = 'Peak Window Width in h'),
+               yaxis = list(title = 'Absolute Energy Error in MWh'),
+               width = 600)
+fig
+```
+The plot clearly shows that our model tends to underpredict the actual peak, although it overpredicts it in some cases.
+Also, not surprisingly, the underprediction gets larger as the peak window grows. This is not of particular
+importance for our mission to identify the time window of a specified width within the next 26
+hours in which there is the most wind energy in the grid. Nevertheless, it is relevant when one would like to use the
+model for predicting the actual peak energy.
+
+There are other great ways of assessing the model performance in this regard. In the training of all models, metrics
+such as mean absolute error, root mean squared error, and r squared, both for in-sample and out-of-sample data were
+evaluated. These metrics are not within the scope of this notebook, which takes a more domain-specific approach to
+evaluate the model's performance for the specific peak prediction problem.
+
+## Improving the Model
+
+Based on the analysis above, we can now sketch out some ideas for improving the model.
+
+The model in itself only forecasts the time series of wind energy in the California grid. However, the quantity that
+we are actually interested in is the location of the peaks. We could refactor our model to predict those locations
+specifically.
+
+We have seen that the model does not perform well on the validation dataset, since it underestimates the amount of
+wind energy included in the peaks of the energy time series. While training the model (outside of this notebook), we
+have note paid attention to how the model differs between predicting more recent vs. older data. In this context,
+several things could be worth investigating:
+- Plot residuals over time to confirm this is indeed an issue
+- Train the model with more recent data only
+- Superimpose a model that models the general trend
+- Choose a different type of model that is great at modeling trends (e.g. ARIMA)
+
+As described in the "About the Model" section at the beginning, the development of the model was subject to great
+computational constraints. The modeling and iteration process could benefit from reducing the number and complexity
+of models.
+
+Finally, a model is only as good as the features it has available. Given that we have ensembled 8 tuned models to look
+at all 188 features, we may have reached a point where we simply cannot extract more information from those features.
+Thus, to improve model performance, we may need additional features that provide additional information to the model.
+In the context of wind power in the California grid, we may want to differentiate between more than 5 clusters. We can
+also want to take information about curtailment of energy production into account.
