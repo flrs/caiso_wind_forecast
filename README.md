@@ -8,7 +8,7 @@ This project is executed in [R](https://www.r-project.org/), using the
 tracking experiments.
 
 The motivation for this project is to explore the capabilities (and limits) of the [Modeltime](https://business-science.github.io/modeltime/)
-time series machine learning library and to get a feeling for the challenges of modelling an electricity grid.
+time series machine learning library and to get a feeling for the challenges of modelling a part of the electricity grid.
 
 ## Overview
 
