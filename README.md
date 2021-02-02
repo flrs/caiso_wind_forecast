@@ -129,7 +129,7 @@ do not miss the energy in the actual peaks within a 26-hour window by more than 
 I am happy about any contribution or feedback. Please let me know about your comments via the 
 [Issues tab](https://github.com/flrs/caiso_wind_forecast/issues) on GitHub.
 
-## License
+## License and Attributions
 
 This project is released under the [MIT License](./LICENSE).
 
@@ -141,3 +141,9 @@ Please also note that weather data as provided in
 [`db_pull_weather_data_raw_20201208.csv`](./data/raw/db_pull_weather_data_raw_20201208.csv) has been extracted from 
 [DarkSky](https://darksky.net) and is subject to its [Terms of Use](https://darksky.net/tos), allowing use only for 
 "personal, non-commercial purposes".
+
+For the [social preview picture](./docs/social_picture.png), the California bear is from 
+[Vecteezy.com](https://www.vecteezy.com/free-vector/california-bear). The R Logo is used in its original form under the 
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and is (C) 2016 by The R Foundation. The Modeltime logo
+is taken from the [Modeltime GitHub repository](https://github.com/business-science/modeltime/blob/37c8bf2e177e1094043986a9bb7d9ae9a8a70da1/man/figures/logo.png)
+and is subject to the [MIT License](https://github.com/business-science/modeltime/blob/37c8bf2e177e1094043986a9bb7d9ae9a8a70da1/LICENSE.md).
