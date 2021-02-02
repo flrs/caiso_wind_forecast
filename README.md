@@ -7,6 +7,9 @@ This project is executed in [R](https://www.r-project.org/), using the
 [Modeltime](https://business-science.github.io/modeltime/) library for modeling, and [MLFlow](https://mlflow.org/) for 
 tracking experiments.
 
+The motivation for this project is to explore the capabilities (and limits) of the [Modeltime](https://business-science.github.io/modeltime/)
+time series machine learning library and to get a feeling for the challenges of modelling an electricity grid.
+
 ## Overview
 
 The picture below gives an overview of the ETL and modeling process. To aid reproducibility, alphanumeric strings in 
