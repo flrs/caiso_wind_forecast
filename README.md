@@ -1,6 +1,8 @@
 # CAISO Wind Energy Forecast
 
-<img width="400" alt="time series plot with labels" src="./docs/example_plot_with_labels.png">
+<p align="center">
+<img width="500" alt="time series plot with labels" src="./docs/example_plot_with_labels.png">
+</p>
 
 This repository is about using machine learning to forecast the amount of wind energy in the California electricity 
 grid. With regards to the typical data science workflow, the repository covers modeling and limited feature engineering.
