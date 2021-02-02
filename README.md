@@ -54,13 +54,13 @@ tuning, subject to 4-fold time series cross-validation. The number of folds was 
 
 A weighted average was chosen for ensembling the models due to performance constraints over potentially more accurate
 methods like stacking. The weights were chosen after assessing 20 different weight combinations through a latin
-hypercube experimental design (find assessment [here](./util/etc/lhc_ensemble_results.xlsx)).
+hypercube experimental design (find assessment [here](./util/etc/lhc_ensemble_results.csv)).
 
 In summary, the modeling process was heavily constrained by performance considerations and available project time.
 
 All model runs, including training and hyperparameter optimization, have been recorded in MLFlow. You can boot up a
-workable MLFlow instance using the associated [Dockerfile](./util/etc/mlflow/Dockerfile). All results have also been 
-exported as CSVs in the ["static" directory](./util/etc/mlflow/static), where every file name corresponds to an MLFlow 
+workable MLFlow instance using the associated [Dockerfile](./util/mlflow/Dockerfile). All results have also been 
+exported as CSVs in the ["static" directory](./util/mlflow/static), where every file name corresponds to an MLFlow 
 experiment.
 
 ### Repository Structure
