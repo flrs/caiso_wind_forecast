@@ -1,0 +1,10 @@
+﻿Model Name,"CV, folds",mae (train),rmse (train),rsq (train),mae (test),rmse (test),rsq (test),ratio mae train/test
+ens_level1_f9e6c40,n,,,,469,599,0.779,
+cubist_level0_b2caff6_1,"y, 4",15,32,0.999,493,634,0.686,0.03
+cubist_level0_b2caff6_3,"y, 4",20,39,0.999,507,656,0.670,0.04
+rf_level0_cc50409_1,"y, 4",219,300,0.943,439,559,0.755,0.50
+rf_level0_cc50409_2,"y, 4",231,315,0.937,440,560,0.753,0.53
+rf_level0_cc50409_3,"y, 4",37,57,0.998,444,567,0.751,0.08
+xgboost_level0_9dc6cbe_1,"y, 4",580,772,0.759,640,799,0.678,0.91
+xgboost_level0_9dc6cbe_2,"y, 4",519,689,0.803,598,752,0.706,0.87
+xgboost_level0_9dc6cbe_3,"y, 4",565,752,0.763,628,783,0.670,0.90
