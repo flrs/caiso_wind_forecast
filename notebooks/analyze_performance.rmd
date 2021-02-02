@@ -159,7 +159,7 @@ samples_with_windows %>%
                          .color_var = name,
                          .smooth = F,
                          .title = '30-min Rolling Window of Actual Wind Power in California Grid',
-        .y_lab = 'Power in MW/Energy in MW12h')
+        .y_lab = 'Power in MW/Energy in MW6h')
 ```
 Now, let's calculate the top 3 windows with the most wind energy in the grid. We use the top 3 because this helps us get
 a clearer picture of the models' performance down the line, in contrast to just comparing to a single actual value
@@ -213,7 +213,7 @@ samples_with_windows_predicted %>%
                          .color_var = name,
                          .smooth = F,
                          .title = '30-min Rolling Window of Wind Power in California Grid',
-        .y_lab = 'Power in MW/Energy in MW12h')
+        .y_lab = 'Power in MW/Energy in MW6h')
 ```
 For this particular sample, the model matches the trough in the daytime hours quite well, but it performs less pleasing
 in the night from June 30 to July 1. In the early morning hours of June 30, the model's prediction stays below the
