@@ -7,6 +7,7 @@ output:
   html_document:
     toc_float: true
     toc: true
+    toc_depth: 2
     number_sections: true
     highlight: tango
 ---
@@ -211,7 +212,7 @@ samples_with_windows_predicted %>%
                          value,
                          .color_var = name,
                          .smooth = F,
-                         .title = '30-min Rolling Window of Actual Wind Power in California Grid',
+                         .title = '30-min Rolling Window of Wind Power in California Grid',
         .y_lab = 'Power in MW/Energy in MW(5min)')
 ```
 For this particular sample, the model matches the trough in the daytime hours quite well, but it performs less pleasing
