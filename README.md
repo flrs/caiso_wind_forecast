@@ -76,8 +76,8 @@ experiment.
   - [raw](./data/raw) – Raw data (see [above](#about-the-data))
   - [processed](./data/processed) – Processed data
 - [docs](./docs) – Documentation
-- [models](./models) – Trained models
-  - [ens_level1_f9e6c40.rds](./models/ens_level1_f9e6c40.rds) – Final, trained ensemble model (see [above](#about-the-model))
+- models – Trained models (removed to save storage space)
+  - ens_level1_f9e6c40.rds – Final, trained ensemble model (see [above](#about-the-model))
 - [notebooks](./notebooks) – Notebooks for experiments and analyses
   - [ext](./notebooks/ext) – Notebooks used in external environments, for example for large-scale training in the cloud
   - [analyze_performance.rmd](./notebooks/analyze_performance.rmd) ([HTML](./notebooks/analyze_performance.html) | [view in browser](https://flrs.github.io/caiso_wind_forecast/)) – Analysis of model performance
